@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "lullaby",
+    "name": "Lullaby",
     "slug": "lullaby",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -8,21 +8,43 @@
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#F7F5FA"
     },
+    "updates": {
+      "fallbackToCacheTimeout": 0
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.guylevy210.lullaby"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      }
+        "backgroundColor": "#F7F5FA"
+      },
+      "package": "com.guylevy210.lullaby"
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "2dc917e8-7c39-40c8-a21d-2d67d69361cd"
+      }
+    },
+    "plugins": [
+      [
+        "expo-updates",
+        {
+          "username": "guylevy210"
+        }
+      ]
+    ],
+    "owner": "guylevy210"
   }
 }

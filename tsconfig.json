@@ -2,8 +2,11 @@
   "compilerOptions": {
     "strict": true,
     "paths": {
-      "@firebase/auth": ["./node_modules/@firebase/auth/dist/index.rn.d.ts"]
-    }
+      "@firebase/auth": ["./node_modules/@firebase/auth/dist/index.rn.d.ts"],
+      "@env": ["./src/types/env.d.ts"]
+    },
+    "typeRoots": ["./src/types"]
   },
-  "extends": "expo/tsconfig.base"
+  "extends": "expo/tsconfig.base",
+  "include": ["./src/**/*", "./src/types/*.d.ts"]
 }

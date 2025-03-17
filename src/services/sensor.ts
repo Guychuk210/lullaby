@@ -16,6 +16,10 @@ import { SensorData, SensorDevice } from '../types';
 // Register a new sensor device
 export const registerSensorDevice = async (userId: string, deviceName: string): Promise<SensorDevice> => {
   try {
+    if (!userId) {
+      throw new Error('User ID is required to register a device');
+    }
+    
     const deviceData = {
       name: deviceName,
       userId,

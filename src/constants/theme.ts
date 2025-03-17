@@ -21,6 +21,9 @@ export const theme = {
     xl: 24,
     xxl: 32,
   },
+  padding: {
+    header: 60,
+  },
   typography: {
     fontFamily: {
       regular: 'System',

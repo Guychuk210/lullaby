@@ -28,7 +28,7 @@ function SettingsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['left', 'right']}>
       <View style={styles.header}>
         <TouchableOpacity 
           style={styles.backButton}
@@ -141,6 +141,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: theme.spacing.l,
+    paddingTop: 50,
     backgroundColor: colors.primary,
   },
   backButton: {
@@ -163,6 +164,7 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     padding: theme.spacing.l,
+    paddingBottom: 0,
   },
   section: {
     backgroundColor: colors.white,

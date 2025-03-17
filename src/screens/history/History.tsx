@@ -81,7 +81,7 @@ function HistoryScreen() {
   }, {} as Record<string, SensorData[]>);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['left', 'right']}>
       <View style={styles.header}>
         <Text style={styles.title}>History</Text>
       </View>
@@ -180,6 +180,7 @@ const styles = StyleSheet.create({
   },
   header: {
     padding: theme.spacing.l,
+    paddingTop: theme.padding.header,
     backgroundColor: colors.primary,
   },
   title: {
@@ -192,6 +193,7 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     padding: theme.spacing.l,
+    paddingBottom: 0,
   },
   loadingContainer: {
     flex: 1,

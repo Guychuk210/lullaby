@@ -2,8 +2,8 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MainTabParamList } from './types';
 import { colors } from '../constants/colors';
+import { Ionicons } from '@expo/vector-icons';
 
-// Import screens (we'll create these later)
 import HomeScreen from '../screens/home/Home';
 import SensorScreen from '../screens/sensor/Sensor';
 import HistoryScreen from '../screens/history/History';
@@ -25,12 +25,18 @@ function MainNavigator() {
           backgroundColor: colors.white,
           borderTopColor: colors.gray[200],
           paddingTop: 5,
-          height: 60,
+          height: 80,
+          paddingBottom: 5,
+          elevation: 8,
+          shadowOpacity: 0.1,
+          shadowRadius: 4,
+          shadowColor: colors.black,
+          shadowOffset: { width: 0, height: -2 },
         },
         tabBarLabelStyle: {
           fontSize: 12,
           fontWeight: '500',
-          paddingBottom: 5,
+          marginTop: 5,
         },
       }}
     >
@@ -39,7 +45,9 @@ function MainNavigator() {
         component={HomeScreen} 
         options={{
           tabBarLabel: 'Home',
-          // tabBarIcon: ({ color, size }) => <HomeIcon color={color} size={size} />,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="home" color={color} size={size} />
+          ),
         }}
       />
       <Tab.Screen 
@@ -47,7 +55,9 @@ function MainNavigator() {
         component={SensorScreen} 
         options={{
           tabBarLabel: 'Sensor',
-          // tabBarIcon: ({ color, size }) => <SensorIcon color={color} size={size} />,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="pulse" color={color} size={size} />
+          ),
         }}
       />
       <Tab.Screen 
@@ -55,7 +65,9 @@ function MainNavigator() {
         component={HistoryScreen} 
         options={{
           tabBarLabel: 'History',
-          // tabBarIcon: ({ color, size }) => <HistoryIcon color={color} size={size} />,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="time" color={color} size={size} />
+          ),
         }}
       />
       <Tab.Screen 
@@ -63,7 +75,9 @@ function MainNavigator() {
         component={ProfileScreen} 
         options={{
           tabBarLabel: 'Profile',
-          // tabBarIcon: ({ color, size }) => <ProfileIcon color={color} size={size} />,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="person" color={color} size={size} />
+          ),
         }}
       />
     </Tab.Navigator>

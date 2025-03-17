@@ -133,7 +133,7 @@ function SensorSetup() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['left', 'right']}>
       <View style={styles.header}>
         <Text style={styles.title}>Set Up Sensor</Text>
         <TouchableOpacity
@@ -202,6 +202,7 @@ const styles = StyleSheet.create({
   },
   header: {
     padding: theme.spacing.l,
+    paddingTop: 50,
     backgroundColor: colors.primary,
     flexDirection: 'row',
     justifyContent: 'space-between',

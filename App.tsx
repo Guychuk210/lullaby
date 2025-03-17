@@ -42,7 +42,7 @@ export default function App() {
 
   return (
     <View style={styles.container} onLayout={onLayoutRootView}>
-      <StatusBar style="auto" />
+      <StatusBar style="light" translucent backgroundColor="transparent" />
       <Navigation />
     </View>
   );

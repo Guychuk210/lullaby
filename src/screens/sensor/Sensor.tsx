@@ -16,6 +16,7 @@ import { theme } from '../../constants/theme';
 import { useAuth } from '../../hooks/useAuth';
 import { getUserDevices, getSensorDataHistory } from '../../services/sensor';
 import { SensorDevice, SensorData } from '../../types';
+import EventCalendar from '../../components/EventCalendar';
 
 type SensorScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -26,6 +27,8 @@ function SensorScreen() {
   const [sensorData, setSensorData] = useState<SensorData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [filteredEvents, setFilteredEvents] = useState<SensorData[]>([]);
 
   useEffect(() => {
     const fetchDeviceAndData = async () => {
@@ -56,12 +59,37 @@ function SensorScreen() {
     fetchDeviceAndData();
   }, [user]);
 
+  // Filter events for the selected day
+  useEffect(() => {
+    if (!selectedDate || !sensorData.length) {
+      setFilteredEvents(sensorData);
+      return;
+    }
+
+    const startOfDay = new Date(selectedDate);
+    startOfDay.setHours(0, 0, 0, 0);
+    
+    const endOfDay = new Date(selectedDate);
+    endOfDay.setHours(23, 59, 59, 999);
+    
+    const filtered = sensorData.filter(data => {
+      const eventDate = new Date(data.timestamp);
+      return eventDate >= startOfDay && eventDate <= endOfDay;
+    });
+    
+    setFilteredEvents(filtered);
+  }, [selectedDate, sensorData]);
+
+  const handleDayPress = (date: Date) => {
+    setSelectedDate(date);
+  };
+
   const handleSetupDevice = () => {
     navigation.navigate('SensorSetup');
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['left', 'right']}>
       <View style={styles.header}>
         <Text style={styles.title}>Sensor Status</Text>
       </View>
@@ -101,15 +129,34 @@ function SensorScreen() {
                 </Text>
               </View>
             </View>
-
-            <Text style={styles.sectionTitle}>Recent Activity</Text>
             
-            {sensorData.length === 0 ? (
+            <EventCalendar 
+              sensorData={sensorData}
+              onDayPress={handleDayPress}
+            />
+
+            <Text style={styles.sectionTitle}>
+              {selectedDate 
+                ? `Events for ${selectedDate.toLocaleDateString()}`
+                : 'Recent Events'
+              }
+            </Text>
+            
+            {selectedDate && (
+              <TouchableOpacity 
+                style={styles.clearFilterButton}
+                onPress={() => setSelectedDate(null)}
+              >
+                <Text style={styles.clearFilterButtonText}>Show All Events</Text>
+              </TouchableOpacity>
+            )}
+            
+            {(selectedDate ? filteredEvents : sensorData).length === 0 ? (
               <View style={styles.emptyDataContainer}>
                 <Text style={styles.emptyDataText}>No sensor data recorded yet.</Text>
               </View>
             ) : (
-              sensorData.map((data) => (
+              (selectedDate ? filteredEvents : sensorData).map((data) => (
                 <View key={data.id} style={styles.dataCard}>
                   <View style={styles.dataHeader}>
                     <Text style={styles.dataTime}>
@@ -150,6 +197,7 @@ const styles = StyleSheet.create({
   },
   header: {
     padding: theme.spacing.l,
+    paddingTop: theme.padding.header,
     backgroundColor: colors.primary,
   },
   title: {
@@ -162,6 +210,7 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     padding: theme.spacing.l,
+    paddingBottom: 0,
   },
   loadingContainer: {
     flex: 1,
@@ -300,6 +349,19 @@ const styles = StyleSheet.create({
   dataDate: {
     fontSize: theme.typography.fontSize.xs,
     color: colors.gray[500],
+  },
+  clearFilterButton: {
+    backgroundColor: colors.secondary,
+    paddingHorizontal: theme.spacing.m,
+    paddingVertical: theme.spacing.s,
+    borderRadius: theme.borderRadius.m,
+    marginBottom: theme.spacing.m,
+    alignSelf: 'flex-start',
+  },
+  clearFilterButtonText: {
+    color: colors.text,
+    fontSize: theme.typography.fontSize.s,
+    fontWeight: '600',
   },
 });
 

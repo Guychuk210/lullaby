@@ -57,7 +57,7 @@ function ProfileScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['left', 'right']}>
       <View style={styles.header}>
         <Text style={styles.title}>Profile</Text>
       </View>
@@ -154,6 +154,7 @@ const styles = StyleSheet.create({
   },
   header: {
     padding: theme.spacing.l,
+    paddingTop: theme.padding.header,
     backgroundColor: colors.primary,
   },
   title: {
@@ -166,6 +167,7 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     padding: theme.spacing.l,
+    paddingBottom: 0,
   },
   profileSection: {
     alignItems: 'center',

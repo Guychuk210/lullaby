@@ -14,8 +14,10 @@ import { RootStackParamList } from '../../navigation/types';
 import { colors } from '../../constants/colors';
 import { theme } from '../../constants/theme';
 import { useAuth } from '../../hooks/useAuth';
-import { getUserDevices } from '../../services/sensor';
-import { SensorDevice } from '../../types';
+import { getUserDevices, getSensorDataHistory } from '../../services/sensor';
+import { SensorDevice, SensorData } from '../../types';
+import SensorStatusCard from '../../components/SensorStatusCard';
+import EventCalendar from '../../components/EventCalendar';
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -23,8 +25,11 @@ function HomeScreen() {
   const navigation = useNavigation<HomeScreenNavigationProp>();
   const { user } = useAuth();
   const [devices, setDevices] = useState<SensorDevice[]>([]);
+  const [sensorData, setSensorData] = useState<SensorData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [filteredEvents, setFilteredEvents] = useState<SensorData[]>([]);
 
   useEffect(() => {
     const fetchDevices = async () => {
@@ -34,6 +39,12 @@ function HomeScreen() {
         setIsLoading(true);
         const userDevices = await getUserDevices(user.id);
         setDevices(userDevices);
+        
+        // Fetch sensor data for the first device
+        if (userDevices.length > 0) {
+          const data = await getSensorDataHistory(userDevices[0].id);
+          setSensorData(data);
+        }
       } catch (err) {
         console.error('Error fetching devices:', err);
         setError('Failed to load devices');
@@ -44,13 +55,38 @@ function HomeScreen() {
 
     fetchDevices();
   }, [user]);
+  
+  // Filter events for the selected day
+  useEffect(() => {
+    if (!selectedDate || !sensorData.length) {
+      setFilteredEvents([]);
+      return;
+    }
+
+    const startOfDay = new Date(selectedDate);
+    startOfDay.setHours(0, 0, 0, 0);
+    
+    const endOfDay = new Date(selectedDate);
+    endOfDay.setHours(23, 59, 59, 999);
+    
+    const filtered = sensorData.filter(data => {
+      const eventDate = new Date(data.timestamp);
+      return eventDate >= startOfDay && eventDate <= endOfDay;
+    });
+    
+    setFilteredEvents(filtered);
+  }, [selectedDate, sensorData]);
 
   const handleAddDevice = () => {
     navigation.navigate('SensorSetup');
   };
 
+  const handleDayPress = (date: Date) => {
+    setSelectedDate(date);
+  };
+
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['left', 'right']}>
       <View style={styles.header}>
         <Text style={styles.greeting}>Hello, {user?.displayName || 'there'}!</Text>
         <Text style={styles.subtitle}>Welcome to Lullaby</Text>
@@ -90,31 +126,59 @@ function HomeScreen() {
           <>
             <Text style={styles.sectionTitle}>Your Devices</Text>
             {devices.map((device) => (
-              <View key={device.id} style={styles.deviceCard}>
-                <View style={styles.deviceInfo}>
-                  <Text style={styles.deviceName}>{device.name}</Text>
-                  <View style={[
-                    styles.statusIndicator, 
-                    { backgroundColor: device.isConnected ? colors.success : colors.error }
-                  ]} />
-                  <Text style={styles.statusText}>
-                    {device.isConnected ? 'Connected' : 'Disconnected'}
-                  </Text>
-                </View>
-                <View style={styles.deviceDetails}>
-                  <Text style={styles.detailText}>Battery: {device.batteryLevel}%</Text>
-                  <Text style={styles.detailText}>
-                    Last Sync: {new Date(device.lastSyncTime).toLocaleTimeString()}
-                  </Text>
-                </View>
-                <TouchableOpacity 
-                  style={styles.viewDetailsButton}
-                  onPress={() => navigation.navigate('Sensor')}
-                >
-                  <Text style={styles.viewDetailsButtonText}>View Details</Text>
-                </TouchableOpacity>
-              </View>
+              <TouchableOpacity 
+                key={device.id}
+                onPress={() => navigation.navigate('Main', { screen: 'Sensor' })}
+              >
+                <SensorStatusCard device={device} />
+              </TouchableOpacity>
             ))}
+            
+            <Text style={styles.sectionTitle}>Event Calendar</Text>
+            <EventCalendar 
+              sensorData={sensorData}
+              onDayPress={handleDayPress}
+            />
+            
+            {selectedDate && (
+              <>
+                <View style={styles.selectedDateHeader}>
+                  <Text style={styles.selectedDateTitle}>
+                    Events for {selectedDate.toLocaleDateString()}
+                  </Text>
+                  <TouchableOpacity 
+                    style={styles.clearDateButton}
+                    onPress={() => setSelectedDate(null)}
+                  >
+                    <Text style={styles.clearDateButtonText}>Clear</Text>
+                  </TouchableOpacity>
+                </View>
+                
+                {filteredEvents.length === 0 ? (
+                  <View style={styles.emptyEventsContainer}>
+                    <Text style={styles.emptyEventsText}>No events on this day</Text>
+                  </View>
+                ) : (
+                  filteredEvents.map((event) => (
+                    <View key={event.id} style={styles.eventCard}>
+                      <View style={styles.eventHeader}>
+                        <Text style={styles.eventTime}>
+                          {new Date(event.timestamp).toLocaleTimeString()}
+                        </Text>
+                        <View style={[
+                          styles.eventStatusIndicator, 
+                          { backgroundColor: event.isWet ? colors.error : colors.success }
+                        ]} />
+                        <Text style={styles.eventStatus}>
+                          {event.isWet ? 'Wet Detected' : 'Dry'}
+                        </Text>
+                      </View>
+                    </View>
+                  ))
+                )}
+              </>
+            )}
+            
             <TouchableOpacity style={styles.addDeviceButton} onPress={handleAddDevice}>
               <Text style={styles.addDeviceButtonText}>Add Another Device</Text>
             </TouchableOpacity>
@@ -132,6 +196,7 @@ const styles = StyleSheet.create({
   },
   header: {
     padding: theme.spacing.l,
+    paddingTop: theme.padding.header,
     backgroundColor: colors.primary,
   },
   greeting: {
@@ -149,6 +214,7 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     padding: theme.spacing.l,
+    paddingBottom: 0,
   },
   loadingContainer: {
     flex: 1,
@@ -213,56 +279,66 @@ const styles = StyleSheet.create({
     color: colors.text,
     marginBottom: theme.spacing.m,
   },
-  deviceCard: {
+  selectedDateHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: theme.spacing.m,
+    backgroundColor: colors.white,
+    borderRadius: theme.borderRadius.m,
+    padding: theme.spacing.m,
+  },
+  selectedDateTitle: {
+    fontSize: theme.typography.fontSize.m,
+    fontWeight: 'bold',
+    color: colors.text,
+  },
+  clearDateButton: {
+    backgroundColor: colors.secondary,
+    paddingHorizontal: theme.spacing.m,
+    paddingVertical: theme.spacing.xs,
+    borderRadius: theme.borderRadius.s,
+  },
+  clearDateButtonText: {
+    color: colors.text,
+    fontSize: theme.typography.fontSize.s,
+    fontWeight: '600',
+  },
+  emptyEventsContainer: {
+    backgroundColor: colors.white,
+    borderRadius: theme.borderRadius.m,
+    padding: theme.spacing.xl,
+    alignItems: 'center',
+    marginBottom: theme.spacing.m,
+  },
+  emptyEventsText: {
+    fontSize: theme.typography.fontSize.m,
+    color: colors.gray[500],
+    textAlign: 'center',
+  },
+  eventCard: {
     backgroundColor: colors.white,
     borderRadius: theme.borderRadius.m,
     padding: theme.spacing.m,
     marginBottom: theme.spacing.m,
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
   },
-  deviceInfo: {
+  eventHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: theme.spacing.m,
   },
-  deviceName: {
-    fontSize: theme.typography.fontSize.l,
-    fontWeight: 'bold',
+  eventTime: {
+    fontSize: theme.typography.fontSize.m,
     color: colors.text,
-    marginRight: theme.spacing.m,
   },
-  statusIndicator: {
+  eventStatusIndicator: {
     width: 10,
     height: 10,
     borderRadius: 5,
-    marginRight: theme.spacing.xs,
+    marginHorizontal: theme.spacing.s,
   },
-  statusText: {
-    fontSize: theme.typography.fontSize.s,
+  eventStatus: {
+    fontSize: theme.typography.fontSize.m,
     color: colors.text,
-  },
-  deviceDetails: {
-    marginBottom: theme.spacing.m,
-  },
-  detailText: {
-    fontSize: theme.typography.fontSize.s,
-    color: colors.text,
-    marginBottom: theme.spacing.xs,
-  },
-  viewDetailsButton: {
-    backgroundColor: colors.secondary,
-    paddingVertical: theme.spacing.s,
-    borderRadius: theme.borderRadius.m,
-    alignItems: 'center',
-  },
-  viewDetailsButtonText: {
-    color: colors.text,
-    fontSize: theme.typography.fontSize.s,
-    fontWeight: '600',
   },
 });
 

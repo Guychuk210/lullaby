@@ -23,6 +23,26 @@ export interface SensorData {
   recordedAt?: any; // Allow Firebase FieldValue
 }
 
+// Bed-wetting event types
+export interface BedWettingEvent {
+  id: string;
+  deviceId: string;  // Required device ID
+  timestamp: number;
+  duration?: number; // Duration in minutes
+  intensity?: 'low' | 'medium' | 'high';
+  notes?: string;
+  isResolved: boolean;
+  alertSent: boolean;
+  createdAt: any; // Allow Firebase FieldValue
+  updatedAt?: any; // Allow Firebase FieldValue
+}
+
+export interface EventsState {
+  events: BedWettingEvent[];
+  isLoading: boolean;
+  error: string | null;
+}
+
 export interface SensorDevice {
   id: string;
   name: string;

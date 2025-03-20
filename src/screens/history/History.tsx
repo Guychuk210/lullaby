@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   View, 
   Text, 
   StyleSheet, 
   ScrollView, 
   TouchableOpacity,
-  ActivityIndicator
+  ActivityIndicator,
+  Alert
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -14,71 +15,64 @@ import { RootStackParamList } from '../../navigation/types';
 import { colors } from '../../constants/colors';
 import { theme } from '../../constants/theme';
 import { useAuth } from '../../hooks/useAuth';
-import { getUserDevices, getSensorDataHistory } from '../../services/sensor';
-import { SensorDevice, SensorData } from '../../types';
+import { useEvents } from '../../hooks/useEvents';
+import { BedWettingEvent } from '../../types';
+import { format } from 'date-fns';
 
 type HistoryScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 function HistoryScreen() {
   const navigation = useNavigation<HistoryScreenNavigationProp>();
   const { user } = useAuth();
-  const [devices, setDevices] = useState<SensorDevice[]>([]);
   const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
-  const [sensorData, setSensorData] = useState<SensorData[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { events, isLoading, error, resolveEvent, deleteEvent } = useEvents();
 
-  useEffect(() => {
-    const fetchDevices = async () => {
-      if (!user) return;
-      
-      try {
-        setIsLoading(true);
-        const userDevices = await getUserDevices(user.id);
-        setDevices(userDevices);
-        
-        if (userDevices.length > 0) {
-          setSelectedDeviceId(userDevices[0].id);
-        }
-      } catch (err) {
-        console.error('Error fetching devices:', err);
-        setError('Failed to load devices');
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  // Get unique device IDs from events
+  const deviceIds = Array.from(new Set(events.map(event => event.deviceId)));
 
-    fetchDevices();
-  }, [user]);
+  // Filter events by selected device
+  const filteredEvents = selectedDeviceId 
+    ? events.filter(event => event.deviceId === selectedDeviceId)
+    : events;
 
-  useEffect(() => {
-    const fetchSensorData = async () => {
-      if (!selectedDeviceId) return;
-      
-      try {
-        setIsLoading(true);
-        const data = await getSensorDataHistory(selectedDeviceId);
-        setSensorData(data);
-      } catch (err) {
-        console.error('Error fetching sensor data:', err);
-        setError('Failed to load sensor data');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchSensorData();
-  }, [selectedDeviceId]);
-
-  // Group data by date
-  const groupedData = sensorData.reduce((groups, data) => {
-    const date = new Date(data.timestamp).toLocaleDateString();
+  // Group events by date
+  const groupedEvents = filteredEvents.reduce((groups, event) => {
+    const date = format(event.timestamp, 'MMM dd, yyyy');
     if (!groups[date]) {
       groups[date] = [];
     }
-    groups[date].push(data);
+    groups[date].push(event);
     return groups;
-  }, {} as Record<string, SensorData[]>);
+  }, {} as Record<string, BedWettingEvent[]>);
+
+  const handleResolveEvent = async (eventId: string) => {
+    try {
+      await resolveEvent(eventId);
+    } catch (err) {
+      Alert.alert('Error', 'Failed to resolve event');
+    }
+  };
+
+  const handleDeleteEvent = async (eventId: string) => {
+    Alert.alert(
+      'Delete Event',
+      'Are you sure you want to delete this event?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteEvent(eventId);
+            } catch (err) {
+              Alert.alert('Error', 'Failed to delete event');
+            }
+          },
+        },
+      ]
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['left', 'right']}>
@@ -96,9 +90,9 @@ function HistoryScreen() {
           <View style={styles.errorContainer}>
             <Text style={styles.errorText}>{error}</Text>
           </View>
-        ) : devices.length === 0 ? (
+        ) : deviceIds.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No devices found.</Text>
+            <Text style={styles.emptyText}>No events found.</Text>
             <TouchableOpacity 
               style={styles.button}
               onPress={() => navigation.navigate('SensorSetup')}
@@ -108,7 +102,7 @@ function HistoryScreen() {
           </View>
         ) : (
           <>
-            {devices.length > 1 && (
+            {deviceIds.length > 1 && (
               <View style={styles.deviceSelector}>
                 <Text style={styles.selectorLabel}>Select Device:</Text>
                 <ScrollView 
@@ -116,20 +110,20 @@ function HistoryScreen() {
                   showsHorizontalScrollIndicator={false}
                   contentContainerStyle={styles.deviceButtonsContainer}
                 >
-                  {devices.map((device) => (
+                  {deviceIds.map((deviceId) => (
                     <TouchableOpacity
-                      key={device.id}
+                      key={deviceId}
                       style={[
                         styles.deviceButton,
-                        selectedDeviceId === device.id && styles.deviceButtonSelected
+                        selectedDeviceId === deviceId && styles.deviceButtonSelected
                       ]}
-                      onPress={() => setSelectedDeviceId(device.id)}
+                      onPress={() => setSelectedDeviceId(deviceId)}
                     >
                       <Text style={[
                         styles.deviceButtonText,
-                        selectedDeviceId === device.id && styles.deviceButtonTextSelected
+                        selectedDeviceId === deviceId && styles.deviceButtonTextSelected
                       ]}>
-                        {device.name}
+                        Device {deviceId.slice(0, 6)}
                       </Text>
                     </TouchableOpacity>
                   ))}
@@ -137,29 +131,45 @@ function HistoryScreen() {
               </View>
             )}
 
-            {Object.keys(groupedData).length === 0 ? (
+            {Object.keys(groupedEvents).length === 0 ? (
               <View style={styles.emptyDataContainer}>
-                <Text style={styles.emptyDataText}>No history data available.</Text>
+                <Text style={styles.emptyDataText}>No events found.</Text>
               </View>
             ) : (
-              Object.entries(groupedData)
+              Object.entries(groupedEvents)
                 .sort((a, b) => new Date(b[0]).getTime() - new Date(a[0]).getTime())
-                .map(([date, dataItems]) => (
+                .map(([date, events]) => (
                   <View key={date} style={styles.dateGroup}>
                     <Text style={styles.dateHeader}>{date}</Text>
-                    {dataItems.map((data) => (
-                      <View key={data.id} style={styles.dataCard}>
-                        <View style={styles.dataHeader}>
-                          <Text style={styles.dataTime}>
-                            {new Date(data.timestamp).toLocaleTimeString()}
+                    {events.map((event) => (
+                      <View key={event.id} style={styles.eventCard}>
+                        <View style={styles.eventHeader}>
+                          <Text style={styles.eventTime}>
+                            {format(event.timestamp, 'hh:mm a')}
                           </Text>
                           <View style={[
-                            styles.dataStatusIndicator, 
-                            { backgroundColor: data.isWet ? colors.error : colors.success }
+                            styles.eventStatusIndicator, 
+                            { backgroundColor: event.isResolved ? colors.success : colors.warning }
                           ]} />
-                          <Text style={styles.dataStatus}>
-                            {data.isWet ? 'Wet Detected' : 'Dry'}
+                          <Text style={styles.eventStatus}>
+                            {event.isResolved ? 'Resolved' : 'Pending'}
                           </Text>
+                        </View>
+                        <View style={styles.eventActions}>
+                          {!event.isResolved && (
+                            <TouchableOpacity
+                              style={[styles.actionButton, styles.resolveButton]}
+                              onPress={() => handleResolveEvent(event.id)}
+                            >
+                              <Text style={styles.actionButtonText}>Resolve</Text>
+                            </TouchableOpacity>
+                          )}
+                          <TouchableOpacity
+                            style={[styles.actionButton, styles.deleteButton]}
+                            onPress={() => handleDeleteEvent(event.id)}
+                          >
+                            <Text style={styles.actionButtonText}>Delete</Text>
+                          </TouchableOpacity>
                         </View>
                       </View>
                     ))}
@@ -249,79 +259,95 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing.s,
   },
   deviceButtonsContainer: {
-    paddingVertical: theme.spacing.xs,
+    flexDirection: 'row',
+    gap: theme.spacing.s,
   },
   deviceButton: {
-    backgroundColor: colors.white,
     paddingHorizontal: theme.spacing.m,
     paddingVertical: theme.spacing.s,
     borderRadius: theme.borderRadius.m,
-    marginRight: theme.spacing.s,
-    borderWidth: 1,
-    borderColor: colors.gray[300],
+    backgroundColor: colors.gray[100],
   },
   deviceButtonSelected: {
     backgroundColor: colors.primary,
-    borderColor: colors.primary,
   },
   deviceButtonText: {
-    color: colors.text,
     fontSize: theme.typography.fontSize.s,
-    fontWeight: '500',
+    color: colors.text,
   },
   deviceButtonTextSelected: {
     color: colors.white,
-  },
-  emptyDataContainer: {
-    backgroundColor: colors.white,
-    borderRadius: theme.borderRadius.m,
-    padding: theme.spacing.l,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emptyDataText: {
-    fontSize: theme.typography.fontSize.m,
-    color: colors.text,
-    textAlign: 'center',
   },
   dateGroup: {
     marginBottom: theme.spacing.l,
   },
   dateHeader: {
-    fontSize: theme.typography.fontSize.m,
-    fontWeight: 'bold',
+    fontSize: theme.typography.fontSize.l,
+    fontWeight: '600',
     color: colors.text,
-    marginBottom: theme.spacing.s,
+    marginBottom: theme.spacing.m,
   },
-  dataCard: {
+  eventCard: {
     backgroundColor: colors.white,
     borderRadius: theme.borderRadius.m,
     padding: theme.spacing.m,
     marginBottom: theme.spacing.s,
     shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  dataHeader: {
+  eventHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: theme.spacing.s,
   },
-  dataTime: {
+  eventTime: {
     fontSize: theme.typography.fontSize.m,
     fontWeight: '500',
     color: colors.text,
-    marginRight: theme.spacing.m,
+    flex: 1,
   },
-  dataStatusIndicator: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    marginRight: theme.spacing.xs,
+  eventStatusIndicator: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginHorizontal: theme.spacing.s,
   },
-  dataStatus: {
+  eventStatus: {
     fontSize: theme.typography.fontSize.s,
+    color: colors.text,
+  },
+  eventActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: theme.spacing.s,
+  },
+  actionButton: {
+    paddingHorizontal: theme.spacing.m,
+    paddingVertical: theme.spacing.s,
+    borderRadius: theme.borderRadius.s,
+  },
+  resolveButton: {
+    backgroundColor: colors.primary,
+  },
+  deleteButton: {
+    backgroundColor: colors.error,
+  },
+  actionButtonText: {
+    color: colors.white,
+    fontSize: theme.typography.fontSize.s,
+    fontWeight: '500',
+  },
+  emptyDataContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: theme.spacing.xxl,
+  },
+  emptyDataText: {
+    fontSize: theme.typography.fontSize.m,
     color: colors.text,
   },
 });

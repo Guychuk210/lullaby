@@ -5,9 +5,9 @@ import { colors } from '../constants/colors';
 import { Ionicons } from '@expo/vector-icons';
 
 import HomeScreen from '../screens/home/Home';
-import SensorScreen from '../screens/sensor/Sensor';
 import HistoryScreen from '../screens/history/History';
 import ProfileScreen from '../screens/profile/Profile';
+import ChatScreen from '../screens/chat/Chat';
 
 // Import icons (you'll need to add these)
 // import { HomeIcon, SensorIcon, HistoryIcon, ProfileIcon } from '../components/icons';
@@ -51,22 +51,22 @@ function MainNavigator() {
         }}
       />
       <Tab.Screen 
-        name="Sensor" 
-        component={SensorScreen} 
-        options={{
-          tabBarLabel: 'Sensor',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="pulse" color={color} size={size} />
-          ),
-        }}
-      />
-      <Tab.Screen 
         name="History" 
         component={HistoryScreen} 
         options={{
           tabBarLabel: 'History',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="time" color={color} size={size} />
+          ),
+        }}
+      />
+      <Tab.Screen 
+        name="Chat" 
+        component={ChatScreen} 
+        options={{
+          tabBarLabel: 'Chat',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="chatbubble-ellipses" color={color} size={size} />
           ),
         }}
       />

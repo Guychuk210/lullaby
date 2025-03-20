@@ -5,7 +5,9 @@ import {
   StyleSheet, 
   ScrollView, 
   TouchableOpacity,
-  ActivityIndicator
+  ActivityIndicator,
+  Alert,
+  Linking
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -14,10 +16,15 @@ import { RootStackParamList } from '../../navigation/types';
 import { colors } from '../../constants/colors';
 import { theme } from '../../constants/theme';
 import { useAuth } from '../../hooks/useAuth';
-import { getUserDevices, getSensorDataHistory } from '../../services/sensor';
-import { SensorDevice, SensorData } from '../../types';
+import { getUserDevices } from '../../services/sensor';
+import { SensorDevice } from '../../types';
 import SensorStatusCard from '../../components/SensorStatusCard';
 import EventCalendar from '../../components/EventCalendar';
+import Resources from '../../components/Resources';
+import WeeklyProgress from '../../components/WeeklyProgress';
+import { createEvent, getDeviceEvents } from '../../services/events';
+import { auth } from '../../services/firebase';
+import { Ionicons } from '@expo/vector-icons';
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -25,14 +32,14 @@ function HomeScreen() {
   const navigation = useNavigation<HomeScreenNavigationProp>();
   const { user } = useAuth();
   const [devices, setDevices] = useState<SensorDevice[]>([]);
-  const [sensorData, setSensorData] = useState<SensorData[]>([]);
+  const [events, setEvents] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [filteredEvents, setFilteredEvents] = useState<SensorData[]>([]);
+  const [filteredEvents, setFilteredEvents] = useState<any[]>([]);
 
   useEffect(() => {
-    const fetchDevices = async () => {
+    const fetchDevicesAndEvents = async () => {
       if (!user) return;
       
       try {
@@ -40,25 +47,30 @@ function HomeScreen() {
         const userDevices = await getUserDevices(user.id);
         setDevices(userDevices);
         
-        // Fetch sensor data for the first device
-        if (userDevices.length > 0) {
-          const data = await getSensorDataHistory(userDevices[0].id);
-          setSensorData(data);
+        // Fetch events for all devices
+        const allEvents: any[] = [];
+        for (const device of userDevices) {
+          const deviceEvents = await getDeviceEvents(device.id);
+          allEvents.push(...deviceEvents);
         }
+        
+        // Sort events by timestamp
+        allEvents.sort((a, b) => b.timestamp - a.timestamp);
+        setEvents(allEvents);
       } catch (err) {
-        console.error('Error fetching devices:', err);
-        setError('Failed to load devices');
+        console.error('Error fetching data:', err);
+        setError('Failed to load data');
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchDevices();
+    fetchDevicesAndEvents();
   }, [user]);
   
   // Filter events for the selected day
   useEffect(() => {
-    if (!selectedDate || !sensorData.length) {
+    if (!selectedDate || !events.length) {
       setFilteredEvents([]);
       return;
     }
@@ -69,13 +81,13 @@ function HomeScreen() {
     const endOfDay = new Date(selectedDate);
     endOfDay.setHours(23, 59, 59, 999);
     
-    const filtered = sensorData.filter(data => {
-      const eventDate = new Date(data.timestamp);
+    const filtered = events.filter(event => {
+      const eventDate = new Date(event.timestamp);
       return eventDate >= startOfDay && eventDate <= endOfDay;
     });
     
     setFilteredEvents(filtered);
-  }, [selectedDate, sensorData]);
+  }, [selectedDate, events]);
 
   const handleAddDevice = () => {
     navigation.navigate('SensorSetup');
@@ -85,11 +97,40 @@ function HomeScreen() {
     setSelectedDate(date);
   };
 
+  const createTestEvent = async () => {
+    try {
+      if (devices.length === 0) {
+        Alert.alert(
+          'No Devices', 
+          'You need to register a device first before creating events.'
+        );
+        return;
+      }
+      
+      const deviceId = devices[0].id;
+      const event = await createEvent(deviceId, Date.now(), 'medium', 'Test event created from Home screen');
+      
+      // Add the new event to the events list
+      setEvents(prevEvents => [event, ...prevEvents].sort((a, b) => b.timestamp - a.timestamp));
+      
+      Alert.alert('Success', `Test event created with ID: ${event.id}`);
+    } catch (err) {
+      console.error('Error creating test event:', err);
+      Alert.alert('Error', `Failed to create test event: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['left', 'right']}>
       <View style={styles.header}>
         <Text style={styles.greeting}>Hello, {user?.displayName || 'there'}!</Text>
         <Text style={styles.subtitle}>Welcome to Lullaby</Text>
+        <TouchableOpacity 
+          style={styles.notificationIcon} 
+          onPress={() => navigation.navigate('Main', { screen: 'History' })}
+        >
+          <Ionicons name="notifications" size={28} color={colors.white} />
+        </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
@@ -124,19 +165,38 @@ function HomeScreen() {
           </View>
         ) : (
           <>
+            <View style={styles.actionButtonsContainer}>
+              <TouchableOpacity 
+                style={[styles.actionButton, styles.testEventButton]} 
+                onPress={createTestEvent}
+              >
+                <Text style={styles.actionButtonText}>Create Test Event</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={[styles.actionButton, styles.alarmButton]} 
+                onPress={() => Alert.alert('Create Alarm', 'Alarm functionality will be added here')}
+              >
+                <Text style={styles.actionButtonText}>Create an Alarm</Text>
+              </TouchableOpacity>
+            </View>
+            
             <Text style={styles.sectionTitle}>Your Devices</Text>
             {devices.map((device) => (
               <TouchableOpacity 
                 key={device.id}
-                onPress={() => navigation.navigate('Main', { screen: 'Sensor' })}
+                onPress={() => navigation.navigate('Main', { screen: 'History' })}
               >
                 <SensorStatusCard device={device} />
               </TouchableOpacity>
             ))}
             
+            <Text style={styles.sectionTitle}>Weekly Progress</Text>
+            <WeeklyProgress events={events} />
+            
             <Text style={styles.sectionTitle}>Event Calendar</Text>
             <EventCalendar 
-              sensorData={sensorData}
+              events={events}
               onDayPress={handleDayPress}
             />
             
@@ -167,17 +227,27 @@ function HomeScreen() {
                         </Text>
                         <View style={[
                           styles.eventStatusIndicator, 
-                          { backgroundColor: event.isWet ? colors.error : colors.success }
+                          { backgroundColor: event.intensity === 'high' ? colors.error : 
+                            event.intensity === 'medium' ? colors.warning : colors.success }
                         ]} />
                         <Text style={styles.eventStatus}>
-                          {event.isWet ? 'Wet Detected' : 'Dry'}
+                          {event.intensity.charAt(0).toUpperCase() + event.intensity.slice(1)} Intensity
                         </Text>
                       </View>
+                      {event.notes && (
+                        <Text style={styles.eventNotes}>{event.notes}</Text>
+                      )}
                     </View>
                   ))
                 )}
               </>
             )}
+            
+            <Text style={styles.sectionTitle}>Resources</Text>
+            <Resources 
+              // onFaqPress={() => Alert.alert('FAQ', 'Opening FAQ...')}
+              // onWebsitePress={() => Alert.alert('Website', 'Opening website...')}
+            />
             
             <TouchableOpacity style={styles.addDeviceButton} onPress={handleAddDevice}>
               <Text style={styles.addDeviceButtonText}>Add Another Device</Text>
@@ -198,6 +268,7 @@ const styles = StyleSheet.create({
     padding: theme.spacing.l,
     paddingTop: theme.padding.header,
     backgroundColor: colors.primary,
+    position: 'relative',
   },
   greeting: {
     fontSize: theme.typography.fontSize.xl,
@@ -270,8 +341,8 @@ const styles = StyleSheet.create({
   },
   addDeviceButtonText: {
     color: colors.white,
+    fontWeight: 'bold',
     fontSize: theme.typography.fontSize.m,
-    fontWeight: '600',
   },
   sectionTitle: {
     fontSize: theme.typography.fontSize.l,
@@ -339,6 +410,43 @@ const styles = StyleSheet.create({
   eventStatus: {
     fontSize: theme.typography.fontSize.m,
     color: colors.text,
+  },
+  eventNotes: {
+    fontSize: theme.typography.fontSize.s,
+    color: colors.gray[600],
+    marginTop: theme.spacing.xs,
+    fontStyle: 'italic',
+  },
+  actionButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: theme.spacing.l,
+  },
+  actionButton: {
+    flex: 1,
+    paddingHorizontal: theme.spacing.m,
+    paddingVertical: theme.spacing.m,
+    borderRadius: theme.borderRadius.m,
+    alignItems: 'center',
+    marginHorizontal: theme.spacing.xs,
+  },
+  actionButtonText: {
+    color: colors.white,
+    fontWeight: 'bold',
+    fontSize: theme.typography.fontSize.s,
+    textAlign: 'center',
+  },
+  testEventButton: {
+    backgroundColor: colors.secondary,
+  },
+  alarmButton: {
+    backgroundColor: colors.primary,
+  },
+  notificationIcon: {
+    position: 'absolute',
+    right: theme.spacing.xl,
+    top: theme.padding.header+5,
+    padding: theme.spacing.s,
   },
 });
 

@@ -3,38 +3,57 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../constants/colors';
 import { theme } from '../constants/theme';
-import { SensorData } from '../types';
 
 interface EventCalendarProps {
-  sensorData: SensorData[];
+  events: any[];
   onDayPress?: (date: Date) => void;
 }
 
-function EventCalendar({ sensorData, onDayPress }: EventCalendarProps) {
+// Define types for different day variations
+interface DayInfoBase {
+  day: number;
+  isCurrentMonth: boolean;
+  isEvent?: boolean;
+}
+
+interface PrevMonthDay extends DayInfoBase {
+  isPrevMonth: boolean;
+}
+
+interface NextMonthDay extends DayInfoBase {
+  isNextMonth: boolean;
+}
+
+interface CurrentMonthDay extends DayInfoBase {
+  isEvent: boolean;
+}
+
+type DayInfo = PrevMonthDay | CurrentMonthDay | NextMonthDay;
+
+function EventCalendar({ events, onDayPress }: EventCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [eventDays, setEventDays] = useState<number[]>([]);
   
-  // Process sensor data to find days with events
+  // Process events to find days with events
   useEffect(() => {
-    if (!sensorData.length) return;
+    if (!events.length) return;
     
-    // Get all days in the current month where a wet event occurred
+    // Get all days in the current month where an event occurred
     const year = currentMonth.getFullYear();
     const month = currentMonth.getMonth();
     
-    const daysWithEvents = sensorData
-      .filter(data => {
-        const eventDate = new Date(data.timestamp);
-        return data.isWet && 
-               eventDate.getFullYear() === year && 
+    const daysWithEvents = events
+      .filter(event => {
+        const eventDate = new Date(event.timestamp);
+        return eventDate.getFullYear() === year && 
                eventDate.getMonth() === month;
       })
-      .map(data => new Date(data.timestamp).getDate())
+      .map(event => new Date(event.timestamp).getDate())
       // Remove duplicates
       .filter((day, index, self) => self.indexOf(day) === index);
     
     setEventDays(daysWithEvents);
-  }, [sensorData, currentMonth]);
+  }, [events, currentMonth]);
   
   // Navigate to previous month
   const goToPreviousMonth = () => {
@@ -70,14 +89,14 @@ function EventCalendar({ sensorData, onDayPress }: EventCalendarProps) {
     const prevMonthLastDay = new Date(year, month, 0).getDate();
     
     // Days from previous month to display
-    const prevMonthDays = Array.from({ length: firstDayOfWeek }, (_, i) => ({
+    const prevMonthDays: PrevMonthDay[] = Array.from({ length: firstDayOfWeek }, (_, i) => ({
       day: prevMonthLastDay - firstDayOfWeek + i + 1,
       isCurrentMonth: false,
       isPrevMonth: true,
     }));
     
     // Days from current month
-    const currentMonthDays = Array.from({ length: daysInMonth }, (_, i) => ({
+    const currentMonthDays: CurrentMonthDay[] = Array.from({ length: daysInMonth }, (_, i) => ({
       day: i + 1,
       isCurrentMonth: true,
       isEvent: eventDays.includes(i + 1),
@@ -85,7 +104,7 @@ function EventCalendar({ sensorData, onDayPress }: EventCalendarProps) {
     
     // Calculate how many days from next month we need to display
     const totalDaysDisplayed = 42; // 6 rows of 7 days
-    const nextMonthDays = Array.from(
+    const nextMonthDays: NextMonthDay[] = Array.from(
       { length: totalDaysDisplayed - prevMonthDays.length - currentMonthDays.length },
       (_, i) => ({
         day: i + 1,
@@ -108,7 +127,7 @@ function EventCalendar({ sensorData, onDayPress }: EventCalendarProps) {
   
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Event Calendar</Text>
+
       
       <View style={styles.calendarContainer}>
         <View style={styles.header}>
@@ -130,13 +149,12 @@ function EventCalendar({ sensorData, onDayPress }: EventCalendarProps) {
         </View>
         
         <View style={styles.daysGrid}>
-          {calendarDays.map((dayInfo, index) => (
+          {calendarDays.map((dayInfo: DayInfo, index) => (
             <TouchableOpacity
               key={`${dayInfo.day}-${index}`}
               style={[
                 styles.dayCell,
                 !dayInfo.isCurrentMonth && styles.otherMonthDay,
-                dayInfo.isEvent && styles.eventDay,
               ]}
               onPress={() => {
                 if (dayInfo.isCurrentMonth && onDayPress) {
@@ -154,11 +172,11 @@ function EventCalendar({ sensorData, onDayPress }: EventCalendarProps) {
                 style={[
                   styles.dayText,
                   !dayInfo.isCurrentMonth && styles.otherMonthDayText,
-                  dayInfo.isEvent && styles.eventDayText,
                 ]}
               >
                 {dayInfo.day}
               </Text>
+              {dayInfo.isEvent && <View style={styles.eventDot} />}
             </TouchableOpacity>
           ))}
         </View>
@@ -234,10 +252,12 @@ const styles = StyleSheet.create({
     aspectRatio: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    position: 'relative',
   },
   dayText: {
     fontSize: theme.typography.fontSize.s,
     color: colors.text,
+    zIndex: 2,
   },
   otherMonthDay: {
     opacity: 0.5,
@@ -245,12 +265,15 @@ const styles = StyleSheet.create({
   otherMonthDayText: {
     color: colors.gray[400],
   },
-  eventDay: {
+  eventDot: {
+    position: 'absolute',
+    bottom: -3,
+    width: 24,
+    height: 24,
+    borderRadius: 16,
     backgroundColor: colors.primary,
-  },
-  eventDayText: {
-    color: colors.white,
-    fontWeight: '600',
+    opacity: 0.5,
+    zIndex: 1,
   },
   legendContainer: {
     flexDirection: 'row',

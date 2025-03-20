@@ -21,7 +21,7 @@ function SensorStatusCard({ device }: SensorStatusCardProps) {
   
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Sensor Status</Text>
+      <Text style={styles.title}>{device.name}</Text>
       
       <View style={styles.statusGrid}>
         {/* Signal Strength */}

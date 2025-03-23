@@ -76,15 +76,17 @@ function SensorStatusCard({ device }: SensorStatusCardProps) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.background,
     borderRadius: theme.borderRadius.m,
+    borderColor: colors.border,
+    borderWidth: 1,
     padding: theme.spacing.l,
     marginBottom: theme.spacing.m,
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    // shadowColor: colors.black,
+    // shadowOffset: { width: 0, height: 2 },
+    // shadowOpacity: 0.1,
+    // shadowRadius: 4,
+    // elevation: 2,
   },
   title: {
     fontSize: theme.typography.fontSize.m,

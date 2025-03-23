@@ -22,11 +22,19 @@ import SensorStatusCard from '../../components/SensorStatusCard';
 import EventCalendar from '../../components/EventCalendar';
 import Resources from '../../components/Resources';
 import WeeklyProgress from '../../components/WeeklyProgress';
+import GuidanceVideos from '../../components/GuidanceVideos';
 import { createEvent, getDeviceEvents } from '../../services/events';
 import { auth } from '../../services/firebase';
 import { Ionicons } from '@expo/vector-icons';
+import Header from '../../components/Header';
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
+// Enum for tab selection
+enum TabView {
+  DASHBOARD = 'Dashboard',
+  GUIDANCE = 'Guidance Videos'
+}
 
 function HomeScreen() {
   const navigation = useNavigation<HomeScreenNavigationProp>();
@@ -37,6 +45,7 @@ function HomeScreen() {
   const [error, setError] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [filteredEvents, setFilteredEvents] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState<TabView>(TabView.DASHBOARD);
 
   useEffect(() => {
     const fetchDevicesAndEvents = async () => {
@@ -120,20 +129,154 @@ function HomeScreen() {
     }
   };
 
-  return (
-    <SafeAreaView style={styles.container} edges={['left', 'right']}>
-      <View style={styles.header}>
-        <Text style={styles.greeting}>Hello, {user?.displayName || 'there'}!</Text>
-        <Text style={styles.subtitle}>Welcome to Lullaby</Text>
+  const renderDashboardContent = () => (
+    <>
+      <View style={styles.actionButtonsContainer}>
         <TouchableOpacity 
-          style={styles.notificationIcon} 
+          style={[styles.actionButton, styles.testEventButton]} 
+          onPress={createTestEvent}
+        >
+          <Text style={styles.actionButtonText}>Create Test Event</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={[styles.actionButton, styles.alarmButton]} 
+          onPress={() => Alert.alert('Create Alarm', 'Alarm functionality will be added here')}
+        >
+          <Text style={styles.actionButtonText}>Create an Alarm</Text>
+        </TouchableOpacity>
+      </View>
+      
+      <Text style={styles.sectionTitle}>Your Devices</Text>
+      {devices.map((device) => (
+        <TouchableOpacity 
+          key={device.id}
           onPress={() => navigation.navigate('Main', { screen: 'History' })}
         >
-          <Ionicons name="notifications" size={28} color={colors.white} />
+          <SensorStatusCard device={device} />
+        </TouchableOpacity>
+      ))}
+      
+      <Text style={styles.sectionTitle}>Weekly Progress</Text>
+      <WeeklyProgress events={events} />
+      
+      <Text style={styles.sectionTitle}>Event Calendar</Text>
+      <EventCalendar 
+        events={events}
+        onDayPress={handleDayPress}
+      />
+      
+      {selectedDate && (
+        <>
+          <View style={styles.selectedDateHeader}>
+            <Text style={styles.selectedDateTitle}>
+              Events for {selectedDate.toLocaleDateString()}
+            </Text>
+            <TouchableOpacity 
+              style={styles.clearDateButton}
+              onPress={() => setSelectedDate(null)}
+            >
+              <Text style={styles.clearDateButtonText}>Clear</Text>
+            </TouchableOpacity>
+          </View>
+          
+          {filteredEvents.length === 0 ? (
+            <View style={styles.emptyEventsContainer}>
+              <Text style={styles.emptyEventsText}>No events on this day</Text>
+            </View>
+          ) : (
+            filteredEvents.map((event) => (
+              <View key={event.id} style={styles.eventCard}>
+                <View style={styles.eventHeader}>
+                  <Text style={styles.eventTime}> An event occured at:&nbsp;
+                    {new Date(event.timestamp).toLocaleTimeString()}
+                  </Text>
+                </View>
+              </View>
+            ))
+          )}
+        </>
+      )}
+      
+      <Text style={styles.sectionTitle}>Resources</Text>
+      <Resources />
+      
+      <TouchableOpacity style={styles.addDeviceButton} onPress={handleAddDevice}>
+        <Text style={styles.addDeviceButtonText}>Add Another Device</Text>
+      </TouchableOpacity>
+    </>
+  );
+
+  const guidanceVideos = [
+    {
+      id: '1',
+      title: 'Getting Started with Lullaby.AI',
+      duration: '3:45',
+      onPress: () => Linking.openURL('https://youtu.be/example1'),
+    },
+    {
+      id: '2',
+      title: 'How to Track Sleep Patterns',
+      duration: '5:20',
+      onPress: () => Linking.openURL('https://youtu.be/example2'),
+    },
+    {
+      id: '3',
+      title: 'Understanding Baby Sleep Cycles',
+      duration: '7:15',
+      onPress: () => Linking.openURL('https://youtu.be/example3'),
+    },
+    {
+      id: '4',
+      title: 'Tips for Better Baby Sleep',
+      duration: '4:30',
+      onPress: () => Linking.openURL('https://youtu.be/example4'),
+    },
+  ];
+
+  return (
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+      <Header notificationCount={3} />
+      
+      <View style={styles.tabContainer}>
+        <TouchableOpacity 
+          style={[
+            styles.tabButton, 
+            activeTab === TabView.DASHBOARD && styles.activeTabButton
+          ]}
+          onPress={() => setActiveTab(TabView.DASHBOARD)}
+        >
+          <Text 
+            style={[
+              styles.tabButtonText, 
+              activeTab === TabView.DASHBOARD && styles.activeTabButtonText
+            ]}
+          >
+            {TabView.DASHBOARD}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={[
+            styles.tabButton, 
+            activeTab === TabView.GUIDANCE && styles.activeTabButton
+          ]}
+          onPress={() => setActiveTab(TabView.GUIDANCE)}
+        >
+          <Text 
+            style={[
+              styles.tabButtonText, 
+              activeTab === TabView.GUIDANCE && styles.activeTabButtonText
+            ]}
+          >
+            {TabView.GUIDANCE}
+          </Text>
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
+      <ScrollView 
+        style={styles.content} 
+        contentContainerStyle={styles.contentContainer}
+      >
         {isLoading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={colors.primary} />
@@ -156,7 +299,7 @@ function HomeScreen() {
               <Text style={styles.retryButtonText}>Retry</Text>
             </TouchableOpacity>
           </View>
-        ) : devices.length === 0 ? (
+        ) : devices.length === 0 && activeTab === TabView.DASHBOARD ? (
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyText}>You don't have any devices yet.</Text>
             <TouchableOpacity style={styles.addDeviceButton} onPress={handleAddDevice}>
@@ -164,95 +307,11 @@ function HomeScreen() {
             </TouchableOpacity>
           </View>
         ) : (
-          <>
-            <View style={styles.actionButtonsContainer}>
-              <TouchableOpacity 
-                style={[styles.actionButton, styles.testEventButton]} 
-                onPress={createTestEvent}
-              >
-                <Text style={styles.actionButtonText}>Create Test Event</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={[styles.actionButton, styles.alarmButton]} 
-                onPress={() => Alert.alert('Create Alarm', 'Alarm functionality will be added here')}
-              >
-                <Text style={styles.actionButtonText}>Create an Alarm</Text>
-              </TouchableOpacity>
-            </View>
-            
-            <Text style={styles.sectionTitle}>Your Devices</Text>
-            {devices.map((device) => (
-              <TouchableOpacity 
-                key={device.id}
-                onPress={() => navigation.navigate('Main', { screen: 'History' })}
-              >
-                <SensorStatusCard device={device} />
-              </TouchableOpacity>
-            ))}
-            
-            <Text style={styles.sectionTitle}>Weekly Progress</Text>
-            <WeeklyProgress events={events} />
-            
-            <Text style={styles.sectionTitle}>Event Calendar</Text>
-            <EventCalendar 
-              events={events}
-              onDayPress={handleDayPress}
-            />
-            
-            {selectedDate && (
-              <>
-                <View style={styles.selectedDateHeader}>
-                  <Text style={styles.selectedDateTitle}>
-                    Events for {selectedDate.toLocaleDateString()}
-                  </Text>
-                  <TouchableOpacity 
-                    style={styles.clearDateButton}
-                    onPress={() => setSelectedDate(null)}
-                  >
-                    <Text style={styles.clearDateButtonText}>Clear</Text>
-                  </TouchableOpacity>
-                </View>
-                
-                {filteredEvents.length === 0 ? (
-                  <View style={styles.emptyEventsContainer}>
-                    <Text style={styles.emptyEventsText}>No events on this day</Text>
-                  </View>
-                ) : (
-                  filteredEvents.map((event) => (
-                    <View key={event.id} style={styles.eventCard}>
-                      <View style={styles.eventHeader}>
-                        <Text style={styles.eventTime}>
-                          {new Date(event.timestamp).toLocaleTimeString()}
-                        </Text>
-                        <View style={[
-                          styles.eventStatusIndicator, 
-                          { backgroundColor: event.intensity === 'high' ? colors.error : 
-                            event.intensity === 'medium' ? colors.warning : colors.success }
-                        ]} />
-                        <Text style={styles.eventStatus}>
-                          {event.intensity.charAt(0).toUpperCase() + event.intensity.slice(1)} Intensity
-                        </Text>
-                      </View>
-                      {event.notes && (
-                        <Text style={styles.eventNotes}>{event.notes}</Text>
-                      )}
-                    </View>
-                  ))
-                )}
-              </>
-            )}
-            
-            <Text style={styles.sectionTitle}>Resources</Text>
-            <Resources 
-              // onFaqPress={() => Alert.alert('FAQ', 'Opening FAQ...')}
-              // onWebsitePress={() => Alert.alert('Website', 'Opening website...')}
-            />
-            
-            <TouchableOpacity style={styles.addDeviceButton} onPress={handleAddDevice}>
-              <Text style={styles.addDeviceButtonText}>Add Another Device</Text>
-            </TouchableOpacity>
-          </>
+          activeTab === TabView.DASHBOARD ? (
+            renderDashboardContent()
+          ) : (
+            <GuidanceVideos videos={guidanceVideos} />
+          )
         )}
       </ScrollView>
     </SafeAreaView>
@@ -280,12 +339,57 @@ const styles = StyleSheet.create({
     color: colors.white,
     opacity: 0.8,
   },
+  alarmButtonContainer: {
+    alignItems: 'center',
+    marginTop: theme.spacing.m,
+    marginBottom: theme.spacing.s,
+  },
+  createAlarmButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.gray[200],
+    borderRadius: 50,
+    paddingVertical: theme.spacing.s,
+    paddingHorizontal: theme.spacing.xl,
+  },
+  alarmIcon: {
+    marginRight: theme.spacing.s,
+  },
+  createAlarmText: {
+    color: colors.text,
+    fontSize: theme.typography.fontSize.m,
+    fontWeight: '500',
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    marginHorizontal: theme.spacing.xl,
+    marginVertical: theme.spacing.m,
+  },
+  tabButton: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: theme.spacing.s,
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
+  },
+  activeTabButton: {
+    borderBottomColor: colors.primary,
+  },
+  tabButtonText: {
+    fontSize: theme.typography.fontSize.m,
+    color: colors.gray[500],
+    fontWeight: '500',
+  },
+  activeTabButtonText: {
+    color: colors.text,
+    fontWeight: '600',
+  },
   content: {
     flex: 1,
   },
   contentContainer: {
     padding: theme.spacing.l,
-    paddingBottom: 0,
+    paddingBottom: theme.spacing.xxl,
   },
   loadingContainer: {
     flex: 1,

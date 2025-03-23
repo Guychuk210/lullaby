@@ -18,6 +18,8 @@ import { useAuth } from '../../hooks/useAuth';
 import { useEvents } from '../../hooks/useEvents';
 import { BedWettingEvent } from '../../types';
 import { format } from 'date-fns';
+import EventCard from '../../components/EventCard';
+import Header from '../../components/Header';
 
 type HistoryScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -27,21 +29,28 @@ function HistoryScreen() {
   const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
   const { events, isLoading, error, resolveEvent, deleteEvent } = useEvents();
 
-  // Get unique device IDs from events
-  const deviceIds = Array.from(new Set(events.map(event => event.deviceId)));
+  // Get unique device IDs from events (filter out undefined deviceIds)
+  const deviceIds = Array.from(new Set(
+    events
+      .filter(event => !!event.deviceId) // Filter out events with undefined deviceId
+      .map(event => event.deviceId)
+  ));
 
-  // Filter events by selected device
+  // Filter events by selected device and exclude events with undefined deviceId
   const filteredEvents = selectedDeviceId 
-    ? events.filter(event => event.deviceId === selectedDeviceId)
-    : events;
+    ? events.filter(event => !!event.deviceId && event.deviceId === selectedDeviceId)
+    : events.filter(event => !!event.deviceId);
 
   // Group events by date
   const groupedEvents = filteredEvents.reduce((groups, event) => {
-    const date = format(event.timestamp, 'MMM dd, yyyy');
-    if (!groups[date]) {
-      groups[date] = [];
+    // Convert timestamp to Date object if it's not already one
+    const eventDate = new Date(event.timestamp);
+    const dateStr = format(eventDate, 'MMM dd, yyyy');
+    
+    if (!groups[dateStr]) {
+      groups[dateStr] = [];
     }
-    groups[date].push(event);
+    groups[dateStr].push(event);
     return groups;
   }, {} as Record<string, BedWettingEvent[]>);
 
@@ -75,11 +84,9 @@ function HistoryScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['left', 'right']}>
-      <View style={styles.header}>
-        <Text style={styles.title}>History</Text>
-      </View>
-
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+      <Header />
+      
       <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
         {isLoading ? (
           <View style={styles.loadingContainer}>
@@ -123,7 +130,7 @@ function HistoryScreen() {
                         styles.deviceButtonText,
                         selectedDeviceId === deviceId && styles.deviceButtonTextSelected
                       ]}>
-                        Device {deviceId.slice(0, 6)}
+                        Device {deviceId ? deviceId.slice(0, 6) : 'Unknown'}
                       </Text>
                     </TouchableOpacity>
                   ))}
@@ -142,36 +149,11 @@ function HistoryScreen() {
                   <View key={date} style={styles.dateGroup}>
                     <Text style={styles.dateHeader}>{date}</Text>
                     {events.map((event) => (
-                      <View key={event.id} style={styles.eventCard}>
-                        <View style={styles.eventHeader}>
-                          <Text style={styles.eventTime}>
-                            {format(event.timestamp, 'hh:mm a')}
-                          </Text>
-                          <View style={[
-                            styles.eventStatusIndicator, 
-                            { backgroundColor: event.isResolved ? colors.success : colors.warning }
-                          ]} />
-                          <Text style={styles.eventStatus}>
-                            {event.isResolved ? 'Resolved' : 'Pending'}
-                          </Text>
-                        </View>
-                        <View style={styles.eventActions}>
-                          {!event.isResolved && (
-                            <TouchableOpacity
-                              style={[styles.actionButton, styles.resolveButton]}
-                              onPress={() => handleResolveEvent(event.id)}
-                            >
-                              <Text style={styles.actionButtonText}>Resolve</Text>
-                            </TouchableOpacity>
-                          )}
-                          <TouchableOpacity
-                            style={[styles.actionButton, styles.deleteButton]}
-                            onPress={() => handleDeleteEvent(event.id)}
-                          >
-                            <Text style={styles.actionButtonText}>Delete</Text>
-                          </TouchableOpacity>
-                        </View>
-                      </View>
+                      <EventCard 
+                        key={event.id}
+                        event={event}
+                        onDelete={handleDeleteEvent}
+                      />
                     ))}
                   </View>
                 ))
@@ -243,6 +225,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.l,
     paddingVertical: theme.spacing.m,
     borderRadius: theme.borderRadius.m,
+    borderWidth: 1,
+    borderColor: colors.primary,
   },
   buttonText: {
     color: colors.white,
@@ -251,6 +235,11 @@ const styles = StyleSheet.create({
   },
   deviceSelector: {
     marginBottom: theme.spacing.l,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.gray[300],
+    borderRadius: theme.borderRadius.m,
+    padding: theme.spacing.m,
   },
   selectorLabel: {
     fontSize: theme.typography.fontSize.s,
@@ -266,10 +255,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.m,
     paddingVertical: theme.spacing.s,
     borderRadius: theme.borderRadius.m,
-    backgroundColor: colors.gray[100],
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.gray[300],
   },
   deviceButtonSelected: {
     backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   deviceButtonText: {
     fontSize: theme.typography.fontSize.s,
@@ -287,64 +279,16 @@ const styles = StyleSheet.create({
     color: colors.text,
     marginBottom: theme.spacing.m,
   },
-  eventCard: {
-    backgroundColor: colors.white,
-    borderRadius: theme.borderRadius.m,
-    padding: theme.spacing.m,
-    marginBottom: theme.spacing.s,
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  eventHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: theme.spacing.s,
-  },
-  eventTime: {
-    fontSize: theme.typography.fontSize.m,
-    fontWeight: '500',
-    color: colors.text,
-    flex: 1,
-  },
-  eventStatusIndicator: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginHorizontal: theme.spacing.s,
-  },
-  eventStatus: {
-    fontSize: theme.typography.fontSize.s,
-    color: colors.text,
-  },
-  eventActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: theme.spacing.s,
-  },
-  actionButton: {
-    paddingHorizontal: theme.spacing.m,
-    paddingVertical: theme.spacing.s,
-    borderRadius: theme.borderRadius.s,
-  },
-  resolveButton: {
-    backgroundColor: colors.primary,
-  },
-  deleteButton: {
-    backgroundColor: colors.error,
-  },
-  actionButtonText: {
-    color: colors.white,
-    fontSize: theme.typography.fontSize.s,
-    fontWeight: '500',
-  },
   emptyDataContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: theme.spacing.xxl,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.gray[300],
+    borderRadius: theme.borderRadius.m,
+    padding: theme.spacing.m,
   },
   emptyDataText: {
     fontSize: theme.typography.fontSize.m,

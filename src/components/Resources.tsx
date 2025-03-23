@@ -37,14 +37,16 @@ function Resources({
 
 const styles = StyleSheet.create({
   resourcesContainer: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.background,
     borderRadius: theme.borderRadius.m,
     padding: theme.spacing.l,
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    borderColor: colors.border,
+    borderWidth: 1,
+    // shadowColor: colors.black,
+    // shadowOffset: { width: 0, height: 2 },
+    // shadowOpacity: 0.1,
+    // shadowRadius: 4,
+    // elevation: 2,
   },
   resourceButton: {
     flexDirection: 'row',
@@ -52,7 +54,7 @@ const styles = StyleSheet.create({
     paddingVertical: theme.spacing.m,
     paddingHorizontal: theme.spacing.m,
     borderWidth: 1,
-    borderColor: colors.gray[200],
+    borderColor: colors.border,
     borderRadius: theme.borderRadius.m,
     marginBottom: theme.spacing.m,
   },

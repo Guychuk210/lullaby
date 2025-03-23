@@ -17,6 +17,7 @@ import { colors } from '../../constants/colors';
 import { theme } from '../../constants/theme';
 import { useAuth } from '../../hooks/useAuth';
 import { signOut } from '../../services/auth';
+import Header from '../../components/Header';
 
 type ProfileScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -57,11 +58,9 @@ function ProfileScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['left', 'right']}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Profile</Text>
-      </View>
-
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+      <Header />
+      
       <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
         <View style={styles.profileSection}>
           <View style={styles.avatarContainer}>

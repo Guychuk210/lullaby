@@ -13,6 +13,7 @@ import { useNavigation } from '@react-navigation/native';
 import { colors } from '../../constants/colors';
 import { theme } from '../../constants/theme';
 import { useAuth } from '../../hooks/useAuth';
+import Header from '../../components/Header';
 
 function SettingsScreen() {
   const navigation = useNavigation();
@@ -28,18 +29,9 @@ function SettingsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['left', 'right']}>
-      <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={styles.backButtonText}>Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>Settings</Text>
-        <View style={styles.placeholder} />
-      </View>
-
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+      <Header />
+      
       <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Account Information</Text>

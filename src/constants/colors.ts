@@ -4,7 +4,7 @@ export const colors = {
   background: '#F7F5FA', // App background (צבע רקע)
   card: '#DDD7E9', // Card background
   text: '#564E64', // Primary text (צבע טקסט)
-  border: '#C4BAD9', // Border color
+  border: '#564E64', // Border color
   notification: '#FF5B5B', // Notification/alert color
   success: '#28A745', // Success color
   warning: '#FFC107', // Warning color

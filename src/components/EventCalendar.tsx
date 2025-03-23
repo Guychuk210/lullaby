@@ -192,15 +192,17 @@ function EventCalendar({ events, onDayPress }: EventCalendarProps) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.background,
     borderRadius: theme.borderRadius.m,
     padding: theme.spacing.l,
     marginBottom: theme.spacing.m,
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    borderColor: colors.border,
+    borderWidth: 1,
+    // shadowColor: colors.black,
+    // shadowOffset: { width: 0, height: 2 },
+    // shadowOpacity: 0.1,
+    // shadowRadius: 4,
+    // elevation: 2,
   },
   title: {
     fontSize: theme.typography.fontSize.m,
@@ -209,8 +211,8 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing.m,
   },
   calendarContainer: {
-    borderWidth: 1,
-    borderColor: colors.gray[200],
+    borderWidth: 0,
+    borderColor: colors.border,
     borderRadius: theme.borderRadius.m,
     overflow: 'hidden',
   },

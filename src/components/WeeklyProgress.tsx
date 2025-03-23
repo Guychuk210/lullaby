@@ -162,8 +162,10 @@ function WeeklyProgress({ events }: WeeklyProgressProps) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.background,
     borderRadius: theme.borderRadius.m,
+    borderColor: colors.border,
+    borderWidth: 1,
     padding: theme.spacing.m,
     marginBottom: theme.spacing.l,
   },

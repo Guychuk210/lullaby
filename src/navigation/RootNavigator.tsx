@@ -15,17 +15,18 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 interface RootNavigatorProps {
   isAuthenticated: boolean;
+  hasSubscription: boolean;
 }
 
-function RootNavigator({ isAuthenticated }: RootNavigatorProps) {
+function RootNavigator({ isAuthenticated, hasSubscription }: RootNavigatorProps) {
   return (
     <Stack.Navigator
       screenOptions={{
         headerShown: false,
       }}
-      initialRouteName={isAuthenticated ? 'Main' : 'Auth'}
+      initialRouteName={isAuthenticated && hasSubscription ? 'Main' : 'Auth'}
     >
-      {!isAuthenticated ? (
+      {!isAuthenticated || !hasSubscription ? (
         <Stack.Screen name="Auth" component={AuthNavigator} />
       ) : (
         <>

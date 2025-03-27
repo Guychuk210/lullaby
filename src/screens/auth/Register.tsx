@@ -42,8 +42,12 @@ function RegisterScreen() {
 
     setIsLoading(true);
     try {
-      await registerUser(email, password, name);
-      // Navigation will be handled by the auth state change in the root navigator
+      const user = await registerUser(email, password, name);
+      // Immediately navigate to subscription before auth state changes
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Subscription' }],
+      });
     } catch (error) {
       Alert.alert('Registration Failed', 'Could not create account. Please try again.');
       console.error('Registration error:', error);

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,12 +11,12 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, CommonActions } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../../navigation/types';
 import { colors } from '../../constants/colors';
 import { theme } from '../../constants/theme';
-import { updateSubscriptionStatus } from '../../services/subscription';
+import { updateSubscriptionStatus, checkSubscriptionStatus } from '../../services/subscription';
 import { auth } from '../../services/firebase';
 
 type SubscriptionScreenNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'Subscription'>;
@@ -28,10 +28,74 @@ function SubscriptionScreen() {
   const [cvc, setCvc] = useState('');
   const [nameOnCard, setNameOnCard] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+
+  // Check if user already has subscription on component mount
+  useEffect(() => {
+    const checkExistingSubscription = async () => {
+      try {
+        const currentUser = auth.currentUser;
+        if (!currentUser) {
+          // No user logged in, don't check subscription
+          setIsInitialLoading(false);
+          return;
+        }
+
+        const hasSubscription = await checkSubscriptionStatus(currentUser.uid);
+        if (hasSubscription) {
+          // User already has subscription, navigate to home
+          navigateToHome();
+        }
+        setIsInitialLoading(false);
+      } catch (error) {
+        console.error('Error checking subscription:', error);
+        setIsInitialLoading(false);
+      }
+    };
+
+    checkExistingSubscription();
+  }, []);
+
+  const navigateToHome = () => {
+    // Reset navigation at the root level
+    navigation.dispatch(
+      CommonActions.reset({
+        index: 0,
+        routes: [
+          { 
+            name: 'Auth',
+            state: {
+              routes: [{ name: 'Login' }]
+            }
+          }
+        ],
+      })
+    );
+
+    // Let the auth state listener handle the redirect to Main
+    // The Navigation component will detect the authenticated and subscribed state
+    // and show the Main navigator
+  };
 
   const handleSubscribe = async () => {
     if (!cardNumber || !expiryDate || !cvc || !nameOnCard) {
       Alert.alert('Error', 'Please fill in all fields');
+      return;
+    }
+
+    // Basic card validation
+    if (cardNumber.replace(/\s/g, '').length < 16) {
+      Alert.alert('Error', 'Please enter a valid card number');
+      return;
+    }
+
+    if (!expiryDate.includes('/') || expiryDate.length !== 5) {
+      Alert.alert('Error', 'Please enter a valid expiry date (MM/YY)');
+      return;
+    }
+
+    if (cvc.length < 3) {
+      Alert.alert('Error', 'Please enter a valid CVC');
       return;
     }
 
@@ -45,16 +109,14 @@ function SubscriptionScreen() {
       // Update subscription status in Firestore
       await updateSubscriptionStatus(currentUser.uid);
       
+      // Show success message and navigate to main app
       Alert.alert(
         'Success',
         'Subscription activated successfully!',
         [
           {
             text: 'OK',
-            onPress: () => {
-              // The auth state listener will handle navigation to the main app
-              // once the subscription status is updated
-            }
+            onPress: () => navigateToHome()
           }
         ]
       );
@@ -66,6 +128,43 @@ function SubscriptionScreen() {
     }
   };
 
+  // Handle credit card number formatting
+  const formatCardNumber = (text: string) => {
+    // Remove all non-numeric characters
+    const cleaned = text.replace(/[^0-9]/g, '');
+    // Add space after every 4 digits
+    const formatted = cleaned.replace(/(\d{4})(?=\d)/g, '$1 ');
+    // Limit to 19 characters (16 digits + 3 spaces)
+    return formatted.slice(0, 19);
+  };
+
+  // Handle expiry date formatting (MM/YY)
+  const formatExpiryDate = (text: string) => {
+    // Remove all non-numeric characters
+    const cleaned = text.replace(/[^0-9]/g, '');
+    
+    if (cleaned.length > 0) {
+      // Format as MM/YY
+      if (cleaned.length <= 2) {
+        return cleaned;
+      } else {
+        return `${cleaned.slice(0, 2)}/${cleaned.slice(2, 4)}`;
+      }
+    }
+    return '';
+  };
+
+  if (isInitialLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={styles.loadingText}>Checking subscription status...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container} edges={['left', 'right']}>
       <ScrollView contentContainerStyle={styles.scrollView}>
@@ -76,7 +175,7 @@ function SubscriptionScreen() {
             resizeMode="contain"
           />
           <Text style={styles.title}>Lullaby.AI</Text>
-          <Text style={styles.subtitle}>Create your account</Text>
+          <Text style={styles.subtitle}>Complete Your Registration</Text>
         </View>
 
         <View style={styles.subscriptionCard}>
@@ -101,7 +200,7 @@ function SubscriptionScreen() {
               style={styles.input}
               placeholder="1234 5678 9012 3456"
               value={cardNumber}
-              onChangeText={setCardNumber}
+              onChangeText={(text) => setCardNumber(formatCardNumber(text))}
               keyboardType="numeric"
               maxLength={19}
             />
@@ -114,8 +213,9 @@ function SubscriptionScreen() {
                 style={styles.input}
                 placeholder="MM/YY"
                 value={expiryDate}
-                onChangeText={setExpiryDate}
+                onChangeText={(text) => setExpiryDate(formatExpiryDate(text))}
                 maxLength={5}
+                keyboardType="numeric"
               />
             </View>
 
@@ -151,17 +251,31 @@ function SubscriptionScreen() {
               <ActivityIndicator color={colors.white} />
             ) : (
               <Text style={styles.buttonText}>
-                Subscribe & Create Account ($20/month)
+                Subscribe & Continue ($20/month)
               </Text>
             )}
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-            disabled={isLoading}
+            style={styles.skipButton}
+            onPress={() => {
+              Alert.alert(
+                'Skip Subscription',
+                'You can subscribe later, but some features will be limited.',
+                [
+                  {
+                    text: 'Continue with Free Version',
+                    onPress: () => navigateToHome()
+                  },
+                  {
+                    text: 'Cancel',
+                    style: 'cancel'
+                  }
+                ]
+              );
+            }}
           >
-            <Text style={styles.backButtonText}>Back</Text>
+            <Text style={styles.skipButtonText}>Skip for now</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -173,6 +287,16 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: theme.spacing.m,
+    fontSize: theme.typography.fontSize.m,
+    color: colors.text,
   },
   scrollView: {
     flexGrow: 1,
@@ -278,13 +402,24 @@ const styles = StyleSheet.create({
     fontSize: theme.typography.fontSize.m,
     fontWeight: '600',
   },
-  backButton: {
+  skipButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
     marginTop: theme.spacing.m,
     padding: theme.spacing.m,
+  },
+  skipButtonText: {
+    color: colors.gray[600],
+    fontSize: theme.typography.fontSize.m,
+  },
+  backButton: {
     alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: theme.spacing.m,
+    padding: theme.spacing.m,
   },
   backButtonText: {
-    color: colors.text,
+    color: colors.gray[600],
     fontSize: theme.typography.fontSize.m,
   },
 });

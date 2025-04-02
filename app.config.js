@@ -37,6 +37,14 @@ export default {
       
       // Gemini config
       GEMINI_API_KEY: process.env.GEMINI_API_KEY,
+      
+      // API URL for backend services
+      API_URL: process.env.API_URL || 'http://10.100.102.14:3001/api',
+      
+      // Vertex AI config
+      VERTEX_AI_PROJECT_ID: process.env.VERTEX_AI_PROJECT_ID || '284266420931',
+      VERTEX_AI_LOCATION: process.env.VERTEX_AI_LOCATION || 'global',
+      VERTEX_AI_ENGINE_ID: process.env.VERTEX_AI_ENGINE_ID || 'bed-wetting-expert_1743595681051',
     }
   },
 }; 

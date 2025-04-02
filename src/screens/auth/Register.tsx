@@ -18,6 +18,7 @@ import { AuthStackParamList } from '../../navigation/types';
 import { registerUser } from '../../services/auth';
 import { colors } from '../../constants/colors';
 import { theme } from '../../constants/theme';
+import PhoneInput from 'react-native-phone-number-input';
 
 type RegisterScreenNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'Register'>;
 
@@ -25,13 +26,23 @@ function RegisterScreen() {
   const navigation = useNavigation<RegisterScreenNavigationProp>();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [formattedPhoneNumber, setFormattedPhoneNumber] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const phoneInput = React.useRef<PhoneInput>(null);
 
   const handleRegister = async () => {
-    if (!name || !email || !password || !confirmPassword) {
+    if (!name || !email || !phoneNumber || !password || !confirmPassword) {
       Alert.alert('Error', 'Please fill in all fields');
+      return;
+    }
+
+    // Validate phone number
+    const checkValid = phoneInput.current?.isValidNumber(phoneNumber);
+    if (!checkValid) {
+      Alert.alert('Error', 'Please enter a valid phone number');
       return;
     }
 
@@ -42,7 +53,9 @@ function RegisterScreen() {
 
     setIsLoading(true);
     try {
-      const user = await registerUser(email, password, name);
+      // Register user with additional phone number field
+      const user = await registerUser(email, password, name, formattedPhoneNumber);
+      
       // Immediately navigate to subscription before auth state changes
       navigation.reset({
         index: 0,
@@ -88,6 +101,27 @@ function RegisterScreen() {
                 onChangeText={setEmail}
                 autoCapitalize="none"
                 keyboardType="email-address"
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Phone Number</Text>
+              <PhoneInput
+                ref={phoneInput}
+                defaultValue={phoneNumber}
+                defaultCode="US"
+                layout="first"
+                onChangeText={(text) => {
+                  setPhoneNumber(text);
+                }}
+                onChangeFormattedText={(text) => {
+                  setFormattedPhoneNumber(text);
+                }}
+                withDarkTheme={false}
+                withShadow={false}
+                autoFocus={false}
+                containerStyle={styles.phoneInputContainer}
+                textContainerStyle={styles.phoneTextContainer}
               />
             </View>
 
@@ -184,6 +218,18 @@ const styles = StyleSheet.create({
     borderRadius: theme.borderRadius.m,
     padding: theme.spacing.m,
     fontSize: theme.typography.fontSize.m,
+  },
+  phoneInputContainer: {
+    width: '100%',
+    borderWidth: 1,
+    borderColor: colors.gray[300],
+    borderRadius: theme.borderRadius.m,
+    backgroundColor: colors.white,
+  },
+  phoneTextContainer: {
+    backgroundColor: colors.white,
+    borderRadius: theme.borderRadius.m,
+    paddingVertical: theme.spacing.s,
   },
   button: {
     backgroundColor: colors.primary,

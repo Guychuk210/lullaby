@@ -27,6 +27,7 @@ import { createEvent, getDeviceEvents } from '../../services/events';
 import { auth } from '../../services/firebase';
 import { Ionicons } from '@expo/vector-icons';
 import Header from '../../components/Header';
+import { Audio } from 'expo-av';
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -46,6 +47,58 @@ function HomeScreen() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [filteredEvents, setFilteredEvents] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<TabView>(TabView.DASHBOARD);
+  const [sound, setSound] = useState<Audio.Sound | null>(null);
+
+  // Function to play the ringtone
+  const playRingtone = async () => {
+    try {
+      // Unload any existing sound
+      if (sound) {
+        await sound.unloadAsync();
+      }
+
+      // Configure audio mode
+      await Audio.setAudioModeAsync({
+        playsInSilentModeIOS: true,
+        staysActiveInBackground: true,
+        shouldDuckAndroid: true,
+        playThroughEarpieceAndroid: false,
+      });
+
+      // Load and play the sound
+      const { sound: newSound } = await Audio.Sound.createAsync(
+        require('../../../assets/sounds/ringtone.mp3'),
+        { shouldPlay: true, isLooping: true }
+      );
+      setSound(newSound);
+    } catch (error) {
+      console.error('Error playing ringtone:', error);
+      Alert.alert('Error', 'Failed to play ringtone');
+    }
+  };
+
+  // Function to stop the ringtone
+  const stopRingtone = async () => {
+    try {
+      if (sound) {
+        await sound.stopAsync();
+        await sound.unloadAsync();
+        setSound(null);
+      }
+    } catch (error) {
+      console.error('Error stopping ringtone:', error);
+      Alert.alert('Error', 'Failed to stop ringtone');
+    }
+  };
+
+  // Cleanup sound when component unmounts
+  useEffect(() => {
+    return () => {
+      if (sound) {
+        sound.unloadAsync();
+      }
+    };
+  }, [sound]);
 
   useEffect(() => {
     const fetchDevicesAndEvents = async () => {
@@ -141,9 +194,17 @@ function HomeScreen() {
         
         <TouchableOpacity 
           style={[styles.actionButton, styles.alarmButton]} 
-          onPress={() => Alert.alert('Create Alarm', 'Alarm functionality will be added here')}
+          onPress={() => {
+            if (sound) {
+              stopRingtone();
+            } else {
+              playRingtone();
+            }
+          }}
         >
-          <Text style={styles.actionButtonText}>Create an Alarm</Text>
+          <Text style={styles.actionButtonText}>
+            {sound ? 'Stop Alarm' : 'Alarm!'}
+          </Text>
         </TouchableOpacity>
       </View>
       

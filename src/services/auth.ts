@@ -11,7 +11,12 @@ import { auth, db } from './firebase';
 import { User } from '../types';
 
 // Register a new user
-export const registerUser = async (email: string, password: string, displayName: string): Promise<User> => {
+export const registerUser = async (
+  email: string, 
+  password: string, 
+  displayName: string,
+  phoneNumber?: string
+): Promise<User> => {
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
@@ -24,6 +29,8 @@ export const registerUser = async (email: string, password: string, displayName:
       id: user.uid,
       email: user.email,
       displayName,
+      phoneNumber: phoneNumber || '',
+      hasActiveSubscription: false, // Default is false until they subscribe
       createdAt: serverTimestamp(),
     };
     
@@ -63,14 +70,23 @@ export const signOut = async (): Promise<void> => {
 
 // Get current user data from Firestore
 export const getCurrentUserData = async (userId: string): Promise<User | null> => {
+  console.log('Getting user data from Firestore for user ID:', userId);
   try {
-    const userDoc = await getDoc(doc(db, 'users', userId));
+    const userDocRef = doc(db, 'users', userId);
+    console.log('Firestore document path:', userDocRef.path);
+    
+    const userDoc = await getDoc(userDocRef);
+    console.log('Document exists:', userDoc.exists());
+    
     if (userDoc.exists()) {
-      return userDoc.data() as User;
+      const userData = userDoc.data() as User;
+      console.log('User data retrieved from Firestore:', userData);
+      return userData;
     }
+    console.log('No user document found in Firestore');
     return null;
   } catch (error) {
-    console.error('Error getting user data:', error);
+    console.error('Error getting user data from Firestore:', error);
     throw error;
   }
 };

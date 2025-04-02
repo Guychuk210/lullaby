@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { RootStackParamList } from './types';
 
@@ -19,18 +19,45 @@ interface RootNavigatorProps {
 }
 
 function RootNavigator({ isAuthenticated, hasSubscription }: RootNavigatorProps) {
+  // Add logging to monitor prop changes
+  console.log('RootNavigator rendered with:', { isAuthenticated, hasSubscription });
+  
+  useEffect(() => {
+    console.log('RootNavigator auth/subscription status changed:', { isAuthenticated, hasSubscription });
+  }, [isAuthenticated, hasSubscription]);
+
+  // Determine the initial route based on authentication and subscription
+  const initialRoute = isAuthenticated && hasSubscription ? 'Main' : 'Auth';
+  console.log('Setting initial route to:', initialRoute);
+
   return (
     <Stack.Navigator
       screenOptions={{
         headerShown: false,
       }}
-      initialRouteName={isAuthenticated && hasSubscription ? 'Main' : 'Auth'}
+      initialRouteName={initialRoute}
     >
       {!isAuthenticated || !hasSubscription ? (
-        <Stack.Screen name="Auth" component={AuthNavigator} />
+        <>
+          <Stack.Screen 
+            name="Auth" 
+            component={AuthNavigator} 
+            listeners={{
+              focus: () => console.log('Auth Navigator focused'),
+              blur: () => console.log('Auth Navigator blurred'),
+            }}
+          />
+        </>
       ) : (
         <>
-          <Stack.Screen name="Main" component={MainNavigator} />
+          <Stack.Screen 
+            name="Main" 
+            component={MainNavigator}
+            listeners={{
+              focus: () => console.log('Main Navigator focused'),
+              blur: () => console.log('Main Navigator blurred'),
+            }}
+          />
           <Stack.Screen name="SensorSetup" component={SensorSetupScreen} />
           <Stack.Screen name="Notifications" component={NotificationsScreen} />
           <Stack.Screen name="Settings" component={SettingsScreen} />

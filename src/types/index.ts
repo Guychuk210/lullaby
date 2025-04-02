@@ -3,6 +3,10 @@ export interface User {
   id: string;
   email: string | null;
   displayName?: string;
+  phoneNumber?: string;
+  hasActiveSubscription?: boolean;
+  subscriptionStartDate?: string;
+  subscriptionEndDate?: string;
   createdAt: number | any; // Allow Firebase FieldValue
 }
 

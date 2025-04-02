@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import {
   StyleSheet,
   View,
@@ -14,9 +14,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../constants/colors';
 import { theme } from '../../constants/theme';
-import { useGeminiChat } from '../../hooks/useGeminiChat';
+import { useVertexAIChat } from '../../hooks/useVertexAIChat';
 import { config } from '../../constants/config';
 import Header from '../../components/Header';
+import { Message } from '../../components/chat/ChatBox';
+import { testVertexAISetup } from '../../services/testVertexAI';
 
 // Sample notification data
 const notifications = [
@@ -44,21 +46,38 @@ const notifications = [
 ];
 
 function Chat() {
-  const [showNotifications, setShowNotifications] = React.useState(false);
+  console.log('[Chat] Component initializing');
+  
+  const [showNotifications, setShowNotifications] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
-  const { messages, isLoading, error, sendMessage, resetChat } = useGeminiChat({
-    initialMessages: [
-      {
-        id: '1',
-        text: 'Hello! How can I help you today?',
-        sender: 'ai',
-        timestamp: new Date(),
-      },
-    ],
+  const [initError, setInitError] = useState<Error | null>(null);
+  
+  // Define the initial message
+  const initialMessage: Message = {
+    id: '1',
+    text: 'Hello! I\'m your bedwetting expert AI assistant. How can I help you today?',
+    sender: 'ai',
+    timestamp: new Date(),
+  };
+  
+  // Use the hook directly within the component
+  const {
+    messages, 
+    isLoading, 
+    error, 
+    sendMessage, 
+    resetChat
+  } = useVertexAIChat({
+    initialMessages: [initialMessage],
   });
+
+  console.log('[Chat] Current message count:', messages.length);
+  console.log('[Chat] Is loading state:', isLoading);
+  console.log('[Chat] Error state:', error?.message || 'No error');
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
+    console.log('[Chat] Messages updated, scrolling to bottom');
     if (scrollViewRef.current) {
       setTimeout(() => {
         scrollViewRef.current?.scrollToEnd({ animated: true });
@@ -69,10 +88,12 @@ function Chat() {
   // Show alert if there's a server connection error
   React.useEffect(() => {
     if (error) {
-      if (error.message.includes('server') || error.message.includes('connect')) {
+      console.error('[Chat] Error detected:', error.message);
+      if (error.message.includes('server') || error.message.includes('connect') || error.message.includes('auth')) {
+        console.log('[Chat] Showing alert for connection error');
         Alert.alert(
-          'Server Connection Error',
-          'Could not connect to the chat server. Make sure the server is running at the correct URL.',
+          'Connection Error',
+          error.message,
           [{ text: 'OK' }]
         );
       }
@@ -80,10 +101,12 @@ function Chat() {
   }, [error]);
 
   const handleSendMessage = async (text: string) => {
+    console.log('[Chat] Handling send message:', text);
     try {
       await sendMessage(text);
+      console.log('[Chat] Message sent successfully');
     } catch (e) {
-      console.error('Error sending message:', e);
+      console.error('[Chat] Error sending message:', e);
       Alert.alert(
         'Error',
         'Failed to send message. Please try again.',
@@ -93,19 +116,22 @@ function Chat() {
   };
 
   const toggleNotifications = () => {
+    console.log('[Chat] Toggling notifications from', showNotifications, 'to', !showNotifications);
     setShowNotifications(!showNotifications);
   };
 
   const handleResetChat = () => {
+    console.log('[Chat] Reset chat triggered');
     Alert.alert(
       'Reset Chat',
       'Are you sure you want to clear this conversation?',
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: 'Cancel', style: 'cancel', onPress: () => console.log('[Chat] Reset cancelled') },
         { 
           text: 'Reset', 
           style: 'destructive', 
           onPress: () => {
+            console.log('[Chat] Performing chat reset');
             resetChat();
           }
         },
@@ -120,23 +146,86 @@ function Chat() {
   };
 
   const handleSend = () => {
-    if (inputText.trim() === '') return;
+    if (inputText.trim() === '') {
+      console.log('[Chat] Empty input, not sending');
+      return;
+    }
+    console.log('[Chat] Sending message from input:', inputText.trim());
     handleSendMessage(inputText);
     setInputText('');
+  };
+
+  // Add debug counter
+  const [debugTapCount, setDebugTapCount] = useState(0);
+  const [showDebugMenu, setShowDebugMenu] = useState(false);
+
+  const handleTitlePress = () => {
+    setDebugTapCount(prev => {
+      const newCount = prev + 1;
+      if (newCount >= 5) {
+        console.log('[Chat] Debug mode activated');
+        setShowDebugMenu(true);
+        return 0;
+      }
+      return newCount;
+    });
+  };
+
+  const runVertexAITest = async () => {
+    console.log('[Chat] Running VertexAI test');
+    Alert.alert('Debug', 'Running VertexAI connection test. Check console for results.');
+    try {
+      await testVertexAISetup();
+      Alert.alert('Test Complete', 'VertexAI test completed. See console for details.');
+    } catch (err) {
+      console.error('[Chat] Test error:', err);
+      Alert.alert('Test Error', 'Test failed. See console for details.');
+    }
   };
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Lullaby.AI</Text>
+        <TouchableOpacity onPress={handleTitlePress}>
+          <Text style={styles.headerTitle}>Lullaby.AI</Text>
+        </TouchableOpacity>
+        
+        {/* Debug Menu Modal */}
+        <Modal
+          visible={showDebugMenu}
+          transparent={true}
+          animationType="slide"
+          onRequestClose={() => setShowDebugMenu(false)}
+        >
+          <View style={styles.debugModalContainer}>
+            <View style={styles.debugModalContent}>
+              <Text style={styles.debugTitle}>Debug Menu</Text>
+              
+              <TouchableOpacity 
+                style={styles.debugButton}
+                onPress={runVertexAITest}
+              >
+                <Text style={styles.debugButtonText}>Test VertexAI Connection</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={[styles.debugButton, { backgroundColor: 'gray' }]}
+                onPress={() => setShowDebugMenu(false)}
+              >
+                <Text style={styles.debugButtonText}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+        
         <View style={styles.headerButtons}>
           <TouchableOpacity 
             style={[styles.chatButton, !showNotifications && styles.activeButton]}
             onPress={() => setShowNotifications(false)}
           >
             <Ionicons name="chatbubble-ellipses-outline" size={20} color={colors.white} />
-            <Text style={styles.chatButtonText}>AI Support Chat</Text>
+            <Text style={styles.chatButtonText}>Bedwetting Expert</Text>
           </TouchableOpacity>
           
           <TouchableOpacity 
@@ -177,7 +266,7 @@ function Chat() {
         <>
           {/* Chat title with reset button */}
           <View style={styles.chatHeader}>
-            <Text style={styles.chatTitle}>AI Support Chat</Text>
+            <Text style={styles.chatTitle}>Bedwetting Expert Chat</Text>
             <TouchableOpacity onPress={handleResetChat} style={styles.resetButton}>
               <Ionicons name="refresh" size={20} color={colors.text} />
             </TouchableOpacity>
@@ -200,7 +289,7 @@ function Chat() {
                 {message.sender === 'ai' && (
                   <View style={styles.messageHeader}>
                     <Ionicons name="person-circle-outline" size={20} color="black" />
-                    <Text style={styles.messageSender}>Support</Text>
+                    <Text style={styles.messageSender}>Bedwetting Expert</Text>
                     <Text style={styles.messageTime}>{formatTime(message.timestamp)}</Text>
                   </View>
                 )}
@@ -223,7 +312,7 @@ function Chat() {
             {isLoading && (
               <View style={styles.loadingContainer}>
                 <ActivityIndicator size="small" color={colors.primary} />
-                <Text style={styles.loadingText}>AI is thinking...</Text>
+                <Text style={styles.loadingText}>Expert is thinking...</Text>
               </View>
             )}
           </ScrollView>
@@ -497,6 +586,37 @@ const styles = StyleSheet.create({
     fontSize: theme.typography.fontSize.xs,
     color: colors.gray[500],
     textAlign: 'right',
+  },
+  debugModalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  debugModalContent: {
+    width: '80%',
+    backgroundColor: 'white',
+    borderRadius: 10,
+    padding: 20,
+    alignItems: 'center',
+  },
+  debugTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 20,
+  },
+  debugButton: {
+    backgroundColor: colors.primary,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+    marginVertical: 5,
+    width: '100%',
+    alignItems: 'center',
+  },
+  debugButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
   },
 });
 

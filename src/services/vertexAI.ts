@@ -8,7 +8,9 @@ import Constants from 'expo-constants';
 const PROJECT_ID = Constants.expoConfig?.extra?.VERTEX_AI_PROJECT_ID || '284266420931';
 const LOCATION = Constants.expoConfig?.extra?.VERTEX_AI_LOCATION || 'global';
 const ENGINE_ID = Constants.expoConfig?.extra?.VERTEX_AI_ENGINE_ID || 'bed-wetting-expert_1743595681051';
-const API_URL = Constants.expoConfig?.extra?.API_URL || 'http://10.100.102.14:3001/api';
+const API_URL = __DEV__ 
+  ? 'http://10.100.102.14:3001/api'  // Local development
+  : 'https://lullaby-server.vercel.app/api';  // Production
 
 // Log configuration values for debugging
 console.log('[VertexAI] Configuration:', {

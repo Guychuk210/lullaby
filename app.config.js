@@ -26,7 +26,18 @@ export default {
     web: {
       favicon: './assets/favicon.png',
     },
+    // EAS Update configuration
+    updates: {
+      url: "https://u.expo.dev/2dc917e8-7c39-40c8-a21d-2d67d69361cd"
+    },
+    runtimeVersion: {
+      policy: "appVersion"
+    },
     extra: {
+      // EAS project configuration
+      eas: {
+        projectId: "2dc917e8-7c39-40c8-a21d-2d67d69361cd"
+      },
       // Firebase config
       FIREBASE_API_KEY: process.env.FIREBASE_API_KEY,
       FIREBASE_AUTH_DOMAIN: process.env.FIREBASE_AUTH_DOMAIN,
@@ -37,9 +48,6 @@ export default {
       
       // Gemini config
       GEMINI_API_KEY: process.env.GEMINI_API_KEY,
-      
-      // API URL for backend services
-      API_URL: process.env.API_URL || 'http://10.100.102.14:3001/api',
       
       // Vertex AI config
       VERTEX_AI_PROJECT_ID: process.env.VERTEX_AI_PROJECT_ID || '284266420931',

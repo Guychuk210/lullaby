@@ -8,35 +8,66 @@ import {
   doc, 
   updateDoc,
   serverTimestamp,
-  onSnapshot
+  onSnapshot,
+  setDoc
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { SensorData, SensorDevice } from '../types';
 import { auth } from './firebase';
 
+/**
+ * Formats a date in YYMMDD-HHMMSS format
+ * @param date - Date or timestamp to format (defaults to current time)
+ * @returns Formatted timestamp string
+ */
+const formatTimestamp = (date: Date | number | string = new Date()): string => {
+  let dateObj: Date;
+  
+  if (typeof date === 'number') {
+    dateObj = new Date(date);
+  } else if (typeof date === 'string' && !isNaN(Date.parse(date))) {
+    dateObj = new Date(date);
+  } else if (date instanceof Date) {
+    dateObj = date;
+  } else {
+    dateObj = new Date();
+  }
+  
+  const year = dateObj.getFullYear().toString().slice(-2);
+  const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+  const day = dateObj.getDate().toString().padStart(2, '0');
+  const hours = dateObj.getHours().toString().padStart(2, '0');
+  const minutes = dateObj.getMinutes().toString().padStart(2, '0');
+  const seconds = dateObj.getSeconds().toString().padStart(2, '0');
+  
+  return `${year}${month}${day}-${hours}${minutes}${seconds}`;
+};
+
 // Register a new sensor device
-export const registerSensorDevice = async (userId: string, deviceName: string): Promise<SensorDevice> => {
+export const registerSensorDevice = async (userId: string, deviceName: string, deviceId: string): Promise<SensorDevice> => {
   try {
     if (!userId) {
       throw new Error('User ID is required to register a device');
     }
     
+    const now = new Date();
+    
     const deviceData = {
       name: deviceName,
       isConnected: false,
       batteryLevel: 100,
-      lastSyncTime: Date.now(),
-      createdAt: serverTimestamp(),
+      lastSyncTime: now,
+      createdAt: now,
     };
     
-    // Add device to the user's devices subcollection
-    const docRef = await addDoc(collection(db, 'users', userId, 'devices'), deviceData);
+    // Use setDoc with the provided deviceId as the document ID
+    const deviceRef = doc(db, 'users', userId, 'devices', deviceId);
+    await setDoc(deviceRef, deviceData);
     
     // Return device data with proper type conversion
     return {
-      id: docRef.id,
+      id: deviceId,
       ...deviceData,
-      createdAt: Date.now(), // Use current timestamp for local object
     } as SensorDevice;
   } catch (error) {
     console.error('Error registering device:', error);
@@ -60,9 +91,9 @@ export const getUserDevices = async (userId: string): Promise<SensorDevice[]> =>
       devices.push({
         id: doc.id,
         ...data,
-        // Convert any Firebase timestamps to regular timestamps
-        lastSyncTime: data.lastSyncTime || Date.now(),
-        createdAt: data.createdAt ? Date.now() : Date.now(),
+        // Make sure timestamps are in correct format
+        lastSyncTime: data.lastSyncTime || formatTimestamp(),
+        createdAt: data.createdAt || formatTimestamp(),
       } as SensorDevice);
     });
     
@@ -86,7 +117,7 @@ export const updateDeviceStatus = async (deviceId: string, isConnected: boolean,
     await updateDoc(doc(db, 'users', userId, 'devices', deviceId), {
       isConnected,
       batteryLevel,
-      lastSyncTime: Date.now(),
+      lastSyncTime: formatTimestamp(),
     });
   } catch (error) {
     console.error('Error updating device status:', error);
@@ -103,11 +134,13 @@ export const recordSensorData = async (deviceId: string, isWet: boolean): Promis
       throw new Error('User not authenticated');
     }
 
+    const timestamp = formatTimestamp();
+    
     // Add sensor data to the device's sensorData subcollection
     await addDoc(collection(db, 'users', userId, 'devices', deviceId, 'sensorData'), {
       isWet,
-      timestamp: Date.now(),
-      recordedAt: serverTimestamp(),
+      timestamp,
+      recordedAt: timestamp,
     });
   } catch (error) {
     console.error('Error recording sensor data:', error);
@@ -139,9 +172,9 @@ export const getSensorDataHistory = async (deviceId: string, limit = 100): Promi
         id: doc.id,
         deviceId,
         ...data,
-        // Convert any Firebase timestamps to regular timestamps
-        timestamp: data.timestamp || Date.now(),
-        recordedAt: data.recordedAt ? Date.now() : Date.now(),
+        // Make sure timestamps are in correct format
+        timestamp: data.timestamp || formatTimestamp(),
+        recordedAt: data.recordedAt || formatTimestamp(),
       } as SensorData);
     });
     
@@ -175,9 +208,9 @@ export const subscribeSensorData = (deviceId: string, callback: (data: SensorDat
         id: doc.id,
         deviceId,
         ...data,
-        // Convert any Firebase timestamps to regular timestamps
-        timestamp: data.timestamp || Date.now(),
-        recordedAt: data.recordedAt ? Date.now() : Date.now(),
+        // Make sure timestamps are in correct format
+        timestamp: data.timestamp || formatTimestamp(),
+        recordedAt: data.recordedAt || formatTimestamp(),
       } as SensorData);
     });
     

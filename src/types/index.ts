@@ -21,7 +21,7 @@ export interface AuthState {
 export interface SensorData {
   id: string;
   deviceId?: string;
-  timestamp: number;
+  timestamp: number | string;
   isWet: boolean;
   batteryLevel?: number;
   recordedAt?: any; // Allow Firebase FieldValue
@@ -53,7 +53,7 @@ export interface SensorDevice {
   userId?: string;
   isConnected: boolean;
   batteryLevel: number;
-  lastSyncTime: number;
+  lastSyncTime: number | string | Date;
   createdAt?: any; // Allow Firebase FieldValue
 }
 

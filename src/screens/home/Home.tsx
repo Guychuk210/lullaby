@@ -271,28 +271,73 @@ function HomeScreen() {
   const guidanceVideos = [
     {
       id: '1',
-      title: 'Getting Started with Lullaby.AI',
+      title: 'Welcome to Lullaby.AI!',
       duration: '3:45',
       onPress: () => Linking.openURL('https://youtu.be/example1'),
     },
     {
       id: '2',
-      title: 'How to Track Sleep Patterns',
-      duration: '5:20',
-      onPress: () => Linking.openURL('https://youtu.be/example2'),
+      title: 'What is Bedwetting?',
+      duration: '3:21',
+      onPress: () => Linking.openURL('https://youtube.com/watch?v=ifEvP-rbn1Y'),
     },
     {
       id: '3',
-      title: 'Understanding Baby Sleep Cycles',
+      title: 'Bedwetting & ADHD: What You Should Know',
       duration: '7:15',
       onPress: () => Linking.openURL('https://youtu.be/example3'),
     },
     {
       id: '4',
-      title: 'Tips for Better Baby Sleep',
+      title: 'How to Use the App',
       duration: '4:30',
-      onPress: () => Linking.openURL('https://youtu.be/example4'),
+      onPress: () => Linking.openURL('https://youtu.be/m7Igg3jgXBU'),
     },
+    {
+      id: '5',
+      title: 'Why It’s Important for Your Child to Hear the Alarm',
+      duration: '4:30',
+      onPress: () => Linking.openURL('https://youtu.be/8Vzn3rChuRM'),
+    },
+    {
+      id: '6',
+      title: 'Troubleshooting: Sensor Issues',
+      duration: '4:30',
+      onPress: () => Linking.openURL('https://youtu.be/m7Igg3jgXBU'),
+    },
+    {
+      id: '7',
+      title: 'Tips That You Should Know',
+      duration: '4:30',
+      onPress: () => Linking.openURL('https://youtu.be/qkNxeST4V2U'),
+    },
+    {
+      id: '8',
+      title: 'Exercises & Evening Habits for Dry Nights',
+      duration: '4:30',
+      onPress: () => Linking.openURL('https://youtu.be/QwmE7FABetU'),
+    },
+    {
+      id: '9',
+      title: 'Positive Reinforcement & Building Control',
+      duration: '4:30',
+      onPress: () => Linking.openURL('https://youtu.be/-AyB6pWtnwU'),
+    },
+    {
+      id: '10',
+      title: 'What is a success?',
+      duration: '4:30',
+      onPress: () => Linking.openURL('https://youtu.be/y_T5K-3vBgY'),
+    },
+    {
+      id: '11',
+      title: 'How to Talk to Your Child About Bedwetting (and Their Siblings Too)',
+      duration: '4:30',
+      onPress: () => Linking.openURL('https://youtu.be/m7Igg3jgXBU'),
+    },
+
+
+
   ];
 
   return (

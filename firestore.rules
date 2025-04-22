@@ -5,30 +5,82 @@ service cloud.firestore {
     function isAuthenticated() {
       return request.auth != null;
     }
-    
-    // Helper function to check if user has an active subscription
-    function hasActiveSubscription() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.hasActiveSubscription == true;
-    }
-    
-    // Helper function to check if user is accessing their own data
-    function isOwner(userId) {
-      return request.auth.uid == userId;
+
+    // Helper function to check if user owns the device
+    function ownsDevice(deviceId) {
+      return isAuthenticated() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)/devices/$(deviceId));
     }
 
-    // Users collection rules
-    match /users/{userId} {
-      // Allow read/write during registration and subscription process
-      allow create: if isAuthenticated() && isOwner(userId);
-      allow read: if isAuthenticated() && isOwner(userId);
-      allow update: if isAuthenticated() && isOwner(userId);
+    // Special case for unassigned user - allow public access for device events
+    match /users/unassigned/devices/{deviceId} {
+      // Allow read/write to unassigned devices without authentication
+      allow read, write: if true;
       
-      // Other collections require active subscription
-      match /{document=**} {
-        allow read, write: if isAuthenticated() && 
-          isOwner(userId) && 
-          (hasActiveSubscription() || resource == null);
+      // Allow events for unassigned devices
+      match /events/{eventId} {
+        allow read, write: if true;
       }
     }
+
+    // Allow listing users for device lookups
+    match /users/{userId} {
+      // Allow listing all users for device lookup purposes
+      allow list: if true;
+      
+      // For detailed access to user docs, require authentication
+      allow get, create, update, delete: if userId != "unassigned" && 
+                          isAuthenticated() && 
+                          request.auth.uid == userId;
+    }
+
+    // Special rule to allow device ID lookups and updates without authentication
+    match /users/{userId}/devices/{deviceId} {
+      // Allow read access for device identification purposes
+      allow get, list: if true;
+      
+      // Allow all updates to devices without authentication
+      allow update, create: if true;
+      
+      // Only require auth for delete operations
+      allow delete: if userId != "unassigned" && 
+                    isAuthenticated() && 
+                    request.auth.uid == userId;
+    }
+      
+    // Events subcollection rules - SPECIAL CASE FOR DEVICE EVENTS REPORTING
+    match /users/{userId}/devices/{deviceId}/events/{eventId} {
+      // Allow writes from any source for creating events (for IoT devices and servers)
+      allow create: if true;
+      
+      // For other operations, require authentication and ownership
+      allow read, update, delete: if userId != "unassigned" && 
+                                   isAuthenticated() && 
+                                   request.auth.uid == userId;
+    }
+
+    // Sensor data subcollection rules
+    match /users/{userId}/devices/{deviceId}/sensorData/{dataId} {
+      allow create: if true;
+      allow read, update, delete: if userId != "unassigned" && 
+                         isAuthenticated() && 
+                         request.auth.uid == userId;
+    }
+
+    // Root-level collections (for backward compatibility)
+    match /devices/{deviceId} {
+      allow read, write: if isAuthenticated() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)/devices/$(deviceId));
+      
+      match /events/{eventId} {
+        allow read, write: if isAuthenticated() && 
+          exists(/databases/$(database)/documents/users/$(request.auth.uid)/devices/$(deviceId));
+      }
+    }
+
+    match /sensorData/{deviceId} {
+      allow read, write: if isAuthenticated() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)/devices/$(deviceId));
+    }
   }
-} 
+}

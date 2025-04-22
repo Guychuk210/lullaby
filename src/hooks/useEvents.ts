@@ -25,18 +25,25 @@ export function useEvents() {
         throw new Error('User not authenticated');
       }
 
+      console.log('Loading events for user:', auth.currentUser.uid);
+
       // Get all user's devices
       const devices = await getUserDevices(auth.currentUser.uid);
+      console.log('Retrieved devices:', devices.length, devices.map(d => d.id));
       
       // Get events for each device
       const allEvents: BedWettingEvent[] = [];
       for (const device of devices) {
+        console.log(`Fetching events for device: ${device.id}`);
         const deviceEvents = await getDeviceEvents(device.id);
+        console.log(`Retrieved ${deviceEvents.length} events for device ${device.id}`);
+        console.log('First few events:', deviceEvents.slice(0, 3).map(e => ({id: e.id, timestamp: e.timestamp})));
         allEvents.push(...deviceEvents);
       }
 
       // Sort all events by timestamp
       allEvents.sort((a, b) => b.timestamp - a.timestamp);
+      console.log(`Total events loaded: ${allEvents.length}`);
       
       setEvents(allEvents);
     } catch (err) {
@@ -49,7 +56,12 @@ export function useEvents() {
 
   // Initial load and setup subscriptions
   useEffect(() => {
-    if (!auth.currentUser) return;
+    if (!auth.currentUser) {
+      console.log('No authenticated user found, skipping event loading');
+      return;
+    }
+
+    console.log('Setting up events and subscriptions for user:', auth.currentUser.uid);
 
     const setupSubscriptions = async () => {
       try {
@@ -58,10 +70,12 @@ export function useEvents() {
 
         // Then get all user's devices for subscriptions
         const devices = await getUserDevices(auth.currentUser!.uid);
+        console.log('Setting up subscriptions for devices:', devices.map(d => d.id));
         
         // Create unsubscribe functions for each device
         const unsubscribeFunctions = devices.map(device => 
           subscribeToDeviceEvents(device.id, (deviceEvents) => {
+            console.log(`Real-time update received for device ${device.id}: ${deviceEvents.length} events`);
             setEvents(currentEvents => {
               // Remove old events for this device
               const otherEvents = currentEvents.filter(e => e.deviceId !== device.id);
@@ -82,6 +96,7 @@ export function useEvents() {
 
     // Cleanup subscriptions on unmount
     return () => {
+      console.log('Cleaning up event subscriptions');
       unsubscribeFns.forEach(fn => fn());
     };
   }, [auth.currentUser]);

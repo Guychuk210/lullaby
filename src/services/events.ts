@@ -75,6 +75,9 @@ export const getDeviceEvents = async (deviceId: string, limit = 100): Promise<Be
   try {
     if (!auth.currentUser) throw new Error('User must be authenticated to get events');
     
+    const collectionPath = `users/${auth.currentUser.uid}/devices/${deviceId}/events`;
+    console.log(`Querying events collection: ${collectionPath}`);
+    
     const eventsQuery = query(
       collection(db, 'users', auth.currentUser.uid, 'devices', deviceId, 'events'),
       orderBy('timestamp', 'desc'),
@@ -82,23 +85,67 @@ export const getDeviceEvents = async (deviceId: string, limit = 100): Promise<Be
     );
     
     const querySnapshot = await getDocs(eventsQuery);
+    console.log(`Query returned ${querySnapshot.size} documents for device ${deviceId}`);
+    
     const events: BedWettingEvent[] = [];
     
     querySnapshot.forEach((doc) => {
       const data = doc.data();
+      console.log(`Processing event document: ${doc.id}`, data);
+      
+      // Ensure timestamp is a valid number
+      let timestamp = data.timestamp;
+      if (timestamp === undefined || timestamp === null) {
+        console.warn(`Event ${doc.id} has no timestamp, using current time`);
+        timestamp = Date.now();
+      } else if (typeof timestamp === 'string') {
+        // Try to parse string timestamp as a number
+        timestamp = parseInt(timestamp, 10);
+        if (isNaN(timestamp)) {
+          console.warn(`Event ${doc.id} has invalid string timestamp, using current time:`, data.timestamp);
+          timestamp = Date.now();
+        }
+      } else if (timestamp instanceof Timestamp) {
+        timestamp = timestamp.toMillis();
+      } else if (typeof timestamp !== 'number' || isNaN(timestamp)) {
+        console.warn(`Event ${doc.id} has invalid timestamp, using current time:`, data.timestamp);
+        timestamp = Date.now();
+      }
+      
+      // Check if timestamp is in seconds instead of milliseconds (common Firebase error)
+      if (timestamp < 1000000000000) {
+        console.log(`Event ${doc.id} has timestamp in seconds, converting to milliseconds:`, timestamp);
+        timestamp = timestamp * 1000;
+      }
+      
+      // Handle createdAt and updatedAt
+      let createdAt = Date.now();
+      if (data.createdAt instanceof Timestamp) {
+        createdAt = data.createdAt.toMillis();
+      } else if (typeof data.createdAt === 'number' && !isNaN(data.createdAt)) {
+        createdAt = data.createdAt;
+      }
+      
+      let updatedAt = createdAt;
+      if (data.updatedAt instanceof Timestamp) {
+        updatedAt = data.updatedAt.toMillis();
+      } else if (typeof data.updatedAt === 'number' && !isNaN(data.updatedAt)) {
+        updatedAt = data.updatedAt;
+      }
+      
       events.push({
         id: doc.id,
         ...data,
-        // Convert Firebase timestamps to numbers
-        timestamp: data.timestamp || Date.now(),
-        createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toMillis() : Date.now(),
-        updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toMillis() : Date.now()
+        deviceId: data.deviceId || deviceId, // Ensure deviceId is set
+        timestamp,
+        createdAt,
+        updatedAt
       } as BedWettingEvent);
     });
     
     return events;
   } catch (error) {
-    console.error('Error getting device events:', error);
+    console.error(`Error getting events for device ${deviceId}:`, error);
     throw error;
   }
 };
@@ -198,6 +245,9 @@ export const subscribeToDeviceEvents = (
 ) => {
   if (!auth.currentUser) throw new Error('User must be authenticated to subscribe to events');
   
+  const collectionPath = `users/${auth.currentUser.uid}/devices/${deviceId}/events`;
+  console.log(`Setting up real-time subscription for: ${collectionPath}`);
+  
   const eventsQuery = query(
     collection(db, 'users', auth.currentUser.uid, 'devices', deviceId, 'events'),
     orderBy('timestamp', 'desc'),
@@ -205,21 +255,70 @@ export const subscribeToDeviceEvents = (
   );
   
   return onSnapshot(eventsQuery, (snapshot) => {
+    console.log(`Real-time update for device ${deviceId}: ${snapshot.size} documents, ${snapshot.docChanges().length} changes`);
+    
+    // Log the types of changes
+    const changeTypes = snapshot.docChanges().map(change => change.type);
+    console.log(`Change types:`, changeTypes);
+    
     const events: BedWettingEvent[] = [];
     
     snapshot.forEach((doc) => {
       const data = doc.data();
+      
+      // Ensure timestamp is a valid number
+      let timestamp = data.timestamp;
+      if (timestamp === undefined || timestamp === null) {
+        console.warn(`Event ${doc.id} has no timestamp, using current time`);
+        timestamp = Date.now();
+      } else if (typeof timestamp === 'string') {
+        // Try to parse string timestamp as a number
+        timestamp = parseInt(timestamp, 10);
+        if (isNaN(timestamp)) {
+          console.warn(`Event ${doc.id} has invalid string timestamp, using current time:`, data.timestamp);
+          timestamp = Date.now();
+        }
+      } else if (timestamp instanceof Timestamp) {
+        timestamp = timestamp.toMillis();
+      } else if (typeof timestamp !== 'number' || isNaN(timestamp)) {
+        console.warn(`Event ${doc.id} has invalid timestamp, using current time:`, data.timestamp);
+        timestamp = Date.now();
+      }
+      
+      // Check if timestamp is in seconds instead of milliseconds (common Firebase error)
+      if (timestamp < 1000000000000) {
+        console.log(`Event ${doc.id} has timestamp in seconds, converting to milliseconds:`, timestamp);
+        timestamp = timestamp * 1000;
+      }
+      
+      // Handle createdAt and updatedAt
+      let createdAt = Date.now();
+      if (data.createdAt instanceof Timestamp) {
+        createdAt = data.createdAt.toMillis();
+      } else if (typeof data.createdAt === 'number' && !isNaN(data.createdAt)) {
+        createdAt = data.createdAt;
+      }
+      
+      let updatedAt = createdAt;
+      if (data.updatedAt instanceof Timestamp) {
+        updatedAt = data.updatedAt.toMillis();
+      } else if (typeof data.updatedAt === 'number' && !isNaN(data.updatedAt)) {
+        updatedAt = data.updatedAt;
+      }
+      
       events.push({
         id: doc.id,
         ...data,
-        // Convert Firebase timestamps to numbers
-        timestamp: data.timestamp || Date.now(),
-        createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toMillis() : Date.now(),
-        updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toMillis() : Date.now()
+        deviceId: data.deviceId || deviceId, // Ensure deviceId is set
+        timestamp,
+        createdAt,
+        updatedAt
       } as BedWettingEvent);
     });
     
     callback(events);
+  }, (error) => {
+    console.error(`Error in real-time subscription for device ${deviceId}:`, error);
   });
 };
 

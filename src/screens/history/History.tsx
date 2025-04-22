@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -29,6 +29,11 @@ function HistoryScreen() {
   const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
   const { events, isLoading, error, resolveEvent, deleteEvent } = useEvents();
 
+  // Debug events loading
+  useEffect(() => {
+    console.log('Events from useEvents hook:', events.length, events.map(e => e.id));
+  }, [events]);
+
   // Get unique device IDs from events (filter out undefined deviceIds)
   const deviceIds = Array.from(new Set(
     events
@@ -36,21 +41,69 @@ function HistoryScreen() {
       .map(event => event.deviceId)
   ));
 
+  // Debug deviceIds
+  useEffect(() => {
+    console.log('Unique device IDs found:', deviceIds);
+  }, [deviceIds]);
+
   // Filter events by selected device and exclude events with undefined deviceId
   const filteredEvents = selectedDeviceId 
     ? events.filter(event => !!event.deviceId && event.deviceId === selectedDeviceId)
     : events.filter(event => !!event.deviceId);
 
+  // Debug filtered events
+  useEffect(() => {
+    console.log('Filtered events:', filteredEvents.length);
+    console.log('First few events:', filteredEvents.slice(0, 3).map(e => ({id: e.id, deviceId: e.deviceId, timestamp: e.timestamp})));
+    
+    // Check for invalid timestamps that might cause errors
+    const invalidEvents = filteredEvents.filter(event => {
+      if (!event.timestamp || isNaN(event.timestamp)) {
+        console.warn('Found event with invalid timestamp:', event.id, event.timestamp);
+        return true;
+      }
+      try {
+        new Date(event.timestamp);
+        return false;
+      } catch (err) {
+        console.warn('Error creating Date from timestamp:', event.id, event.timestamp, err);
+        return true;
+      }
+    });
+    
+    if (invalidEvents.length > 0) {
+      console.warn('Found events with invalid timestamps:', invalidEvents.length);
+    }
+  }, [filteredEvents]);
+
   // Group events by date
   const groupedEvents = filteredEvents.reduce((groups, event) => {
-    // Convert timestamp to Date object if it's not already one
-    const eventDate = new Date(event.timestamp);
-    const dateStr = format(eventDate, 'MMM dd, yyyy');
-    
-    if (!groups[dateStr]) {
-      groups[dateStr] = [];
+    try {
+      // Validate timestamp before using it
+      const timestamp = event.timestamp || Date.now();
+      if (isNaN(timestamp)) {
+        console.warn('Invalid timestamp found:', event.id, timestamp);
+        return groups;
+      }
+      
+      // Convert timestamp to Date object if it's not already one
+      const eventDate = new Date(timestamp);
+      
+      // Ensure we have a valid date before formatting
+      if (isNaN(eventDate.getTime())) {
+        console.warn('Invalid date object created from timestamp:', event.id, timestamp);
+        return groups;
+      }
+      
+      const dateStr = format(eventDate, 'MMM dd, yyyy');
+      
+      if (!groups[dateStr]) {
+        groups[dateStr] = [];
+      }
+      groups[dateStr].push(event);
+    } catch (err) {
+      console.error('Error processing event for grouping:', event.id, err);
     }
-    groups[dateStr].push(event);
     return groups;
   }, {} as Record<string, BedWettingEvent[]>);
 

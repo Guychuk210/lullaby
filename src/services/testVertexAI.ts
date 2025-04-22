@@ -4,10 +4,9 @@
  */
 import axios from 'axios';
 import Constants from 'expo-constants';
+import { config } from '../constants/config';
 
-const API_URL = __DEV__ 
-  ? 'http://10.100.102.14:3001/api'  // Local development
-  : 'https://lullaby-server.vercel.app/api';  // Production
+const API_URL = config.apiUrl;
 
 async function testVertexAISetup() {
   console.log('Starting VertexAI integration test');

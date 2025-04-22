@@ -7,7 +7,8 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
-  ScrollView
+  ScrollView,
+  Clipboard
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -17,6 +18,7 @@ import { colors } from '../../constants/colors';
 import { theme } from '../../constants/theme';
 import { useAuth } from '../../hooks/useAuth';
 import { registerSensorDevice } from '../../services/sensor';
+import { Ionicons } from '@expo/vector-icons';
 
 type SensorSetupScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -24,6 +26,7 @@ function SensorSetup() {
   const navigation = useNavigation<SensorSetupScreenNavigationProp>();
   const { user } = useAuth();
   const [deviceName, setDeviceName] = useState('');
+  const [deviceId, setDeviceId] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 3;
@@ -41,14 +44,14 @@ function SensorSetup() {
 
     setIsLoading(true);
     try {
-      await registerSensorDevice(user.id, deviceName);
+      await registerSensorDevice(user.id, deviceName, deviceId);
       Alert.alert(
         'Success',
         'Device registered successfully',
         [
           {
             text: 'OK',
-            onPress: () => navigation.navigate('Main', { screen: 'Sensor' }),
+            onPress: () => navigation.navigate('Main', { screen: 'Home' }),
           },
         ]
       );
@@ -69,10 +72,17 @@ function SensorSetup() {
         { 
           text: 'Exit', 
           style: 'destructive',
-          onPress: () => navigation.navigate('Main', { screen: 'Sensor' })
+          onPress: () => navigation.navigate('Main', { screen: 'Home' })
         }
       ]
     );
+  };
+
+  const handleCopyDeviceId = () => {
+    const defaultDeviceId = 'EC:A3:45:0B:65:F4';
+    Clipboard.setString(defaultDeviceId);
+    setDeviceId(defaultDeviceId);
+    Alert.alert('Copied', 'Device ID copied to clipboard');
   };
 
   const renderStep = () => {
@@ -124,6 +134,23 @@ function SensorSetup() {
                 value={deviceName}
                 onChangeText={setDeviceName}
               />
+            </View>
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Device ID</Text>
+              <View style={styles.inputWithIcon}>
+                <TextInput
+                  style={styles.inputWithIconField}
+                  placeholder="i.e. EC:A3:45:0B:65:F4"
+                  value={deviceId}
+                  onChangeText={setDeviceId}
+                />
+                <TouchableOpacity 
+                  style={styles.copyButton}
+                  onPress={handleCopyDeviceId}
+                >
+                  <Ionicons name="copy-outline" size={22} color={colors.primary} />
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
         );
@@ -292,6 +319,23 @@ const styles = StyleSheet.create({
     borderRadius: theme.borderRadius.m,
     padding: theme.spacing.m,
     fontSize: theme.typography.fontSize.m,
+  },
+  inputWithIcon: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  inputWithIconField: {
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.gray[300],
+    borderRadius: theme.borderRadius.m,
+    padding: theme.spacing.m,
+    fontSize: theme.typography.fontSize.m,
+    flex: 1,
+  },
+  copyButton: {
+    padding: theme.spacing.m,
+    marginLeft: theme.spacing.xs,
   },
   buttonContainer: {
     flexDirection: 'row',

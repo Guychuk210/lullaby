@@ -7,6 +7,6 @@ export const config = {
   },
 
   apiUrl: __DEV__ 
-    ? 'http://10.100.102.14:3001/api'  // Local development
+    ? 'http://192.168.1.126:3001/api'  // Local development
     : 'https://lullaby-server.vercel.app/api',  // Production
 }; 

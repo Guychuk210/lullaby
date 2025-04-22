@@ -3,15 +3,13 @@ import { Message } from '../components/chat/ChatBox';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 import Constants from 'expo-constants';
+import { config } from '../constants/config';
 
 // Get constants from Expo configuration
 const PROJECT_ID = Constants.expoConfig?.extra?.VERTEX_AI_PROJECT_ID || '284266420931';
 const LOCATION = Constants.expoConfig?.extra?.VERTEX_AI_LOCATION || 'global';
 const ENGINE_ID = Constants.expoConfig?.extra?.VERTEX_AI_ENGINE_ID || 'bed-wetting-expert_1743595681051';
-const API_URL = __DEV__ 
-  ? 'http://10.100.102.14:3001/api'  // Local development
-  : 'https://lullaby-server.vercel.app/api';  // Production
-
+const API_URL = config.apiUrl;
 // Log configuration values for debugging
 console.log('[VertexAI] Configuration:', {
   PROJECT_ID,

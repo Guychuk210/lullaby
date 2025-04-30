@@ -122,26 +122,11 @@ function SettingsScreen() {
             <Text style={styles.menuItemText}>Change Password</Text>
           </TouchableOpacity>
           
-          <TouchableOpacity style={styles.menuItem}>
-            <Text style={styles.menuItemText}>Two-Factor Authentication</Text>
+          <TouchableOpacity style={styles.menuItem} disabled={true}>
+            <Text style={[styles.menuItemText, styles.disabledText]}>Two-Factor Authentication</Text>
           </TouchableOpacity>
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Data & Privacy</Text>
-          
-          <TouchableOpacity style={styles.menuItem}>
-            <Text style={styles.menuItemText}>Data Storage</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.menuItem}>
-            <Text style={styles.menuItemText}>Export Data</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.menuItem}>
-            <Text style={styles.menuItemText}>Delete Account</Text>
-          </TouchableOpacity>
-        </View>
 
         {/* Sign Out Button Section */}
         <View style={styles.section}>
@@ -286,6 +271,9 @@ const styles = StyleSheet.create({
   menuItemText: {
     fontSize: theme.typography.fontSize.m,
     color: colors.text,
+  },
+  disabledText: {
+    color: colors.gray[200],
   },
   // Sign Out Button Styles
   signOutButton: {

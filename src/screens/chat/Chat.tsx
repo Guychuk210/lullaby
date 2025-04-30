@@ -259,11 +259,21 @@ function Chat() {
           
           <View style={styles.headerButtons}>
             <TouchableOpacity 
-              style={[styles.chatButton, !showNotifications && styles.activeButton]}
+              style={[
+                styles.chatButton, 
+                showNotifications ? styles.inactiveChatButton : styles.activeChatButton
+              ]}
               onPress={() => setShowNotifications(false)}
             >
-              <Ionicons name="chatbubble-ellipses-outline" size={20} color={colors.white} />
-              <Text style={styles.chatButtonText}>Bedwetting Expert</Text>
+              <Ionicons 
+                name="chatbubble-ellipses-outline" 
+                size={20} 
+                color={showNotifications ? colors.text : colors.white} 
+              />
+              <Text style={[
+                styles.chatButtonText,
+                showNotifications ? {color: colors.text} : {color: colors.white}
+              ]}>Bedwetting Expert</Text>
             </TouchableOpacity>
             
             <TouchableOpacity 
@@ -414,20 +424,30 @@ const styles = StyleSheet.create({
   chatButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.gray[600],
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 4,
     flex: 1,
     marginRight: 8,
+    borderWidth: 1,
   },
-  activeButton: {
+  activeChatButton: {
     backgroundColor: colors.gray[700],
+    borderColor: colors.gray[700],
+  },
+  inactiveChatButton: {
+    backgroundColor: colors.white,
+    borderColor: colors.gray[300],
   },
   chatButtonText: {
-    color: colors.white,
     marginLeft: 4,
     fontSize: 14,
+  },
+  activeChatButtonText: {
+    color: colors.white,
+  },
+  inactiveChatButtonText: {
+    color: colors.text,
   },
   notificationButton: {
     flexDirection: 'row',

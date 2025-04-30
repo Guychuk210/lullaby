@@ -53,7 +53,10 @@ function GuidanceVideos({ videos }: GuidanceVideosProps) {
             <Text style={styles.videoDuration}>{video.duration}</Text>
           </View>
           
-          <TouchableOpacity style={styles.watchButton}>
+          <TouchableOpacity 
+            style={styles.watchButton}
+            onPress={video.onPress}
+          >
             <Text style={styles.watchButtonText}>Watch</Text>
           </TouchableOpacity>
         </TouchableOpacity>

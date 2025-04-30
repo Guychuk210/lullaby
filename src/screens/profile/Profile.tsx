@@ -7,7 +7,8 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
-  Switch
+  Switch,
+  Linking
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, CommonActions } from '@react-navigation/native';
@@ -101,16 +102,6 @@ function ProfileScreen() {
           <Text style={styles.sectionTitle}>Settings</Text>
           
           <View style={styles.settingItem}>
-            <Text style={styles.settingLabel}>Notifications</Text>
-            <Switch
-              value={notificationsEnabled}
-              onValueChange={setNotificationsEnabled}
-              trackColor={{ false: colors.gray[300], true: colors.primary }}
-              thumbColor={colors.white}
-            />
-          </View>
-          
-          <View style={styles.settingItem}>
             <Text style={styles.settingLabel}>Dark Mode</Text>
             <Switch
               value={darkModeEnabled}
@@ -124,20 +115,6 @@ function ProfileScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Account</Text>
           
-          <TouchableOpacity 
-            style={styles.menuItem}
-            onPress={() => navigation.navigate('Settings')}
-          >
-            <Text style={styles.menuItemText}>Account Settings</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={styles.menuItem}
-            onPress={() => navigation.navigate('Notifications')}
-          >
-            <Text style={styles.menuItemText}>Notification Preferences</Text>
-          </TouchableOpacity>
-          
           <TouchableOpacity style={styles.menuItem}>
             <Text style={styles.menuItemText}>Privacy Policy</Text>
           </TouchableOpacity>
@@ -146,8 +123,25 @@ function ProfileScreen() {
             <Text style={styles.menuItemText}>Terms of Service</Text>
           </TouchableOpacity>
           
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity 
+            style={styles.menuItem} 
+            onPress={() => Linking.openURL('mailto:stav@lullabyai.net')}
+          >
             <Text style={styles.menuItemText}>Help & Support</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={[styles.menuItem, styles.menuItemDisabled]}
+            disabled={true}
+          >
+            <Text style={[styles.menuItemText, styles.disabledText]}>Account Settings</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={[styles.menuItem, styles.menuItemDisabled]}
+            disabled={true}
+          >
+            <Text style={[styles.menuItemText, styles.disabledText]}>Notification Preferences</Text>
           </TouchableOpacity>
         </View>
 
@@ -258,6 +252,12 @@ const styles = StyleSheet.create({
   menuItemText: {
     fontSize: theme.typography.fontSize.m,
     color: colors.text,
+  },
+  menuItemDisabled: {
+    opacity: 0.6,
+  },
+  disabledText: {
+    color: colors.gray[400],
   },
   signOutButton: {
     backgroundColor: colors.error,

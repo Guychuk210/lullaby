@@ -11,7 +11,7 @@ interface ResourcesProps {
 }
 
 function Resources({ 
-  onFaqPress = () => Linking.openURL('https://lullabyai.net/'), 
+  onFaqPress = () => Linking.openURL('https://lullabyai.net/faq'), 
   onWebsitePress = () => Linking.openURL('https://lullabyai.net/') 
 }: ResourcesProps) {
   return (

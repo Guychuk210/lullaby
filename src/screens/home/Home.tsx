@@ -282,12 +282,7 @@ function HomeScreen() {
       
       <Text style={styles.sectionTitle}>Your Devices</Text>
       {devices.map((device) => (
-        <TouchableOpacity 
-          key={device.id}
-          onPress={() => navigation.navigate('Main', { screen: 'History' })}
-        >
-          <SensorStatusCard device={device} />
-        </TouchableOpacity>
+        <SensorStatusCard key={device.id} device={device} />
       ))}
       
       <Text style={styles.sectionTitle}>Weekly Progress</Text>
@@ -309,7 +304,7 @@ function HomeScreen() {
               style={styles.clearDateButton}
               onPress={() => setSelectedDate(null)}
             >
-              <Text style={styles.clearDateButtonText}>Clear</Text>
+              <Text style={styles.clearDateButtonText}>Hide</Text>
             </TouchableOpacity>
           </View>
           
@@ -345,7 +340,7 @@ function HomeScreen() {
       id: '1',
       title: 'Welcome to Lullaby.AI!',
       duration: '3:45',
-      onPress: () => Linking.openURL('https://youtu.be/example1'),
+      onPress: () => Linking.openURL('https://youtube.com/watch?v=m7Igg3jgXBU'),
     },
     {
       id: '2',
@@ -357,55 +352,55 @@ function HomeScreen() {
       id: '3',
       title: 'Bedwetting & ADHD: What You Should Know',
       duration: '7:15',
-      onPress: () => Linking.openURL('https://youtu.be/example3'),
+      onPress: () => Linking.openURL('https://youtube.com/watch?v=y_T5K-3vBgY'),
     },
     {
       id: '4',
       title: 'How to Use the App',
       duration: '4:30',
-      onPress: () => Linking.openURL('https://youtu.be/m7Igg3jgXBU'),
+      onPress: () => Linking.openURL('https://youtube.com/watch?v=m7Igg3jgXBU'),
     },
     {
       id: '5',
       title: "Why It's Important for Your Child to Hear the Alarm",
       duration: '4:30',
-      onPress: () => Linking.openURL('https://youtu.be/8Vzn3rChuRM'),
+      onPress: () => Linking.openURL('https://youtube.com/watch?v=8Vzn3rChuRM'),
     },
     {
       id: '6',
       title: 'Troubleshooting: Sensor Issues',
       duration: '4:30',
-      onPress: () => Linking.openURL('https://youtu.be/m7Igg3jgXBU'),
+      onPress: () => Linking.openURL('https://youtube.com/watch?v=m7Igg3jgXBU'),
     },
     {
       id: '7',
       title: 'Tips That You Should Know',
       duration: '4:30',
-      onPress: () => Linking.openURL('https://youtu.be/qkNxeST4V2U'),
+      onPress: () => Linking.openURL('https://youtube.com/watch?v=qkNxeST4V2U'),
     },
     {
       id: '8',
       title: 'Exercises & Evening Habits for Dry Nights',
       duration: '4:30',
-      onPress: () => Linking.openURL('https://youtu.be/QwmE7FABetU'),
+      onPress: () => Linking.openURL('https://youtube.com/watch?v=QwmE7FABetU'),
     },
     {
       id: '9',
       title: 'Positive Reinforcement & Building Control',
       duration: '4:30',
-      onPress: () => Linking.openURL('https://youtu.be/-AyB6pWtnwU'),
+      onPress: () => Linking.openURL('https://youtube.com/watch?v=-AyB6pWtnwU'),
     },
     {
       id: '10',
       title: 'What is a success?',
       duration: '4:30',
-      onPress: () => Linking.openURL('https://youtu.be/y_T5K-3vBgY'),
+      onPress: () => Linking.openURL('https://youtube.com/watch?v=y_T5K-3vBgY'),
     },
     {
       id: '11',
       title: 'How to Talk to Your Child About Bedwetting (and Their Siblings Too)',
       duration: '4:30',
-      onPress: () => Linking.openURL('https://youtu.be/m7Igg3jgXBU'),
+      onPress: () => Linking.openURL('https://youtube.com/watch?v=m7Igg3jgXBU'),
     },
   ];
 

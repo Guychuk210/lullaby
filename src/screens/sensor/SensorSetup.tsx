@@ -8,7 +8,11 @@ import {
   ActivityIndicator,
   Alert,
   ScrollView,
-  Clipboard
+  Clipboard,
+  KeyboardAvoidingView,
+  Platform,
+  TouchableWithoutFeedback,
+  Keyboard
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -27,6 +31,7 @@ function SensorSetup() {
   const { user } = useAuth();
   const [deviceName, setDeviceName] = useState('');
   const [deviceId, setDeviceId] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 3;
@@ -44,7 +49,7 @@ function SensorSetup() {
 
     setIsLoading(true);
     try {
-      await registerSensorDevice(user.id, deviceName, deviceId);
+      await registerSensorDevice(user.id, deviceName, deviceId, phoneNumber);
       Alert.alert(
         'Success',
         'Device registered successfully',
@@ -152,6 +157,15 @@ function SensorSetup() {
                 </TouchableOpacity>
               </View>
             </View>
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Phone Number to Contact</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="+972 501234567"
+                value={phoneNumber}
+                onChangeText={setPhoneNumber}
+              />
+            </View>
           </View>
         );
       default:
@@ -161,63 +175,71 @@ function SensorSetup() {
 
   return (
     <SafeAreaView style={styles.container} edges={['left', 'right']}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Set Up Sensor</Text>
-        <TouchableOpacity
-          style={styles.exitButton}
-          onPress={handleExit}
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <KeyboardAvoidingView 
+          style={styles.keyboardAvoidingContainer}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 1 : 1}
         >
-          <Text style={styles.exitButtonText}>Exit</Text>
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
-        <View style={styles.progressContainer}>
-          {Array.from({ length: totalSteps }).map((_, index) => (
-            <View
-              key={index}
-              style={[
-                styles.progressStep,
-                index + 1 <= currentStep ? styles.progressStepActive : {},
-              ]}
-            />
-          ))}
-        </View>
-
-        {renderStep()}
-
-        <View style={styles.buttonContainer}>
-          {currentStep > 1 && (
+          <View style={styles.header}>
+            <Text style={styles.title}>Set Up Sensor</Text>
             <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => setCurrentStep(currentStep - 1)}
+              style={styles.exitButton}
+              onPress={handleExit}
             >
-              <Text style={styles.backButtonText}>Back</Text>
+              <Text style={styles.exitButtonText}>Exit</Text>
             </TouchableOpacity>
-          )}
+          </View>
 
-          {currentStep < totalSteps ? (
-            <TouchableOpacity
-              style={styles.nextButton}
-              onPress={() => setCurrentStep(currentStep + 1)}
-            >
-              <Text style={styles.nextButtonText}>Next</Text>
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity
-              style={styles.finishButton}
-              onPress={handleRegisterDevice}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <ActivityIndicator color={colors.white} />
-              ) : (
-                <Text style={styles.finishButtonText}>Finish Setup</Text>
+          <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
+            <View style={styles.progressContainer}>
+              {Array.from({ length: totalSteps }).map((_, index) => (
+                <View
+                  key={index}
+                  style={[
+                    styles.progressStep,
+                    index + 1 <= currentStep ? styles.progressStepActive : {},
+                  ]}
+                />
+              ))}
+            </View>
+
+            {renderStep()}
+
+            <View style={styles.buttonContainer}>
+              {currentStep > 1 && (
+                <TouchableOpacity
+                  style={styles.backButton}
+                  onPress={() => setCurrentStep(currentStep - 1)}
+                >
+                  <Text style={styles.backButtonText}>Back</Text>
+                </TouchableOpacity>
               )}
-            </TouchableOpacity>
-          )}
-        </View>
-      </ScrollView>
+
+              {currentStep < totalSteps ? (
+                <TouchableOpacity
+                  style={styles.nextButton}
+                  onPress={() => setCurrentStep(currentStep + 1)}
+                >
+                  <Text style={styles.nextButtonText}>Next</Text>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  style={styles.finishButton}
+                  onPress={handleRegisterDevice}
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <ActivityIndicator color={colors.white} />
+                  ) : (
+                    <Text style={styles.finishButtonText}>Finish Setup</Text>
+                  )}
+                </TouchableOpacity>
+              )}
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </TouchableWithoutFeedback>
     </SafeAreaView>
   );
 }
@@ -226,6 +248,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  keyboardAvoidingContainer: {
+    flex: 1,
   },
   header: {
     padding: theme.spacing.l,

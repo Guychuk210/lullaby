@@ -28,6 +28,8 @@ import { auth } from '../../services/firebase';
 import { Ionicons } from '@expo/vector-icons';
 import Header from '../../components/Header';
 import { Audio } from 'expo-av';
+import axios from 'axios';
+import { config } from '../../constants/config';
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -169,13 +171,83 @@ function HomeScreen() {
         return;
       }
       
+      if (!user) {
+        Alert.alert('Error', 'You must be logged in to create events.');
+        return;
+      }
+      
       const deviceId = devices[0].id;
-      const event = await createEvent(deviceId, Date.now(), 'medium', 'Test event created from Home screen');
       
-      // Add the new event to the events list
-      setEvents(prevEvents => [event, ...prevEvents].sort((a, b) => b.timestamp - a.timestamp));
+      // Call the server's reportEvent endpoint directly
+      const serverUrl = config.apiUrl + '/sensors'; // Server route from routes/index.ts and sensor.routes.ts
       
-      Alert.alert('Success', `Test event created with ID: ${event.id}`);
+      // Prepare event data for the sensor controller
+      const eventData = {
+        isWet: true,
+        intensity: 'medium',
+        batteryLevel: 85,
+        signalStrength: 70,
+        timestamp: Date.now()
+      };
+      
+      console.log(`Sending test event to server for device ${deviceId}...`);
+      
+      try {
+        // Call the server's reportEvent endpoint
+        // Route is defined in sensor.routes.ts as /:id/events
+        const response = await axios.post(
+          `${serverUrl}/${deviceId}/events`, 
+          eventData
+        );
+        
+        console.log('Server response:', response.data);
+        
+        if (response.data.success) {
+          Alert.alert(
+            'Success', 
+            `Test event created!`
+          );
+          
+          // Refresh the events list
+          const refreshedEvents = await getDeviceEvents(deviceId);
+          setEvents(prevEvents => {
+            const otherDeviceEvents = prevEvents.filter(e => e.deviceId !== deviceId);
+            return [...refreshedEvents, ...otherDeviceEvents].sort((a, b) => b.timestamp - a.timestamp);
+          });
+        } else {
+          throw new Error(response.data.error || 'Unknown server error');
+        }
+      } catch (serverError) {
+        console.error('Server request failed:', serverError);
+        
+        // Fallback to local event creation if server call fails
+        Alert.alert(
+          'Server Communication Failed',
+          'Creating local event record only. The server call failed with error: ' + 
+          (serverError instanceof Error ? serverError.message : 'Unknown error'),
+          [
+            { 
+              text: 'Cancel', 
+              style: 'cancel' 
+            },
+            {
+              text: 'Create Local Event Only',
+              onPress: async () => {
+                const event = await createEvent(
+                  deviceId, 
+                  Date.now(), 
+                  'medium', 
+                  'Test event created locally (server unreachable)'
+                );
+                
+                setEvents(prevEvents => [event, ...prevEvents].sort((a, b) => b.timestamp - a.timestamp));
+                
+                Alert.alert('Success', `Local event created with ID: ${event.id}`);
+              }
+            }
+          ]
+        );
+      }
     } catch (err) {
       console.error('Error creating test event:', err);
       Alert.alert('Error', `Failed to create test event: ${err instanceof Error ? err.message : 'Unknown error'}`);
@@ -295,7 +367,7 @@ function HomeScreen() {
     },
     {
       id: '5',
-      title: 'Why It’s Important for Your Child to Hear the Alarm',
+      title: "Why It's Important for Your Child to Hear the Alarm",
       duration: '4:30',
       onPress: () => Linking.openURL('https://youtu.be/8Vzn3rChuRM'),
     },
@@ -335,9 +407,6 @@ function HomeScreen() {
       duration: '4:30',
       onPress: () => Linking.openURL('https://youtu.be/m7Igg3jgXBU'),
     },
-
-
-
   ];
 
   return (

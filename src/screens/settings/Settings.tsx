@@ -9,11 +9,12 @@ import {
   Alert
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { CommonActions, useNavigation } from '@react-navigation/native';
 import { colors } from '../../constants/colors';
 import { theme } from '../../constants/theme';
 import { useAuth } from '../../hooks/useAuth';
 import Header from '../../components/Header';
+import { auth } from '../../services/firebase';
 
 function SettingsScreen() {
   const navigation = useNavigation();
@@ -21,11 +22,34 @@ function SettingsScreen() {
   const [name, setName] = useState(user?.displayName || '');
   const [email, setEmail] = useState(user?.email || '');
   const [isEditing, setIsEditing] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSave = () => {
     // In a real app, you would update the user's profile here
     Alert.alert('Success', 'Profile updated successfully');
     setIsEditing(false);
+  };
+
+  const handleSignOut = async () => {
+    setIsLoading(true);
+    try {
+      // Force sign out by directly clearing Firebase auth
+      await auth.signOut();
+      
+      // Hard reload the app to force reset to initial screen
+      console.log('Sign out successful, now redirecting to login screen');
+      navigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: 'Main' }],
+        })
+      );
+    } catch (error) {
+      console.error('Sign out error:', error);
+      Alert.alert('Error', 'Failed to sign out. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -116,6 +140,19 @@ function SettingsScreen() {
           
           <TouchableOpacity style={styles.menuItem}>
             <Text style={styles.menuItemText}>Delete Account</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Sign Out Button Section */}
+        <View style={styles.section}>
+          <TouchableOpacity 
+            style={styles.signOutButton}
+            onPress={handleSignOut}
+            disabled={isLoading}
+          >
+            <Text style={styles.signOutButtonText}>
+              {isLoading ? 'Signing Out...' : 'Sign Out'}
+            </Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -249,6 +286,18 @@ const styles = StyleSheet.create({
   menuItemText: {
     fontSize: theme.typography.fontSize.m,
     color: colors.text,
+  },
+  // Sign Out Button Styles
+  signOutButton: {
+    backgroundColor: colors.error,
+    borderRadius: theme.borderRadius.m,
+    padding: theme.spacing.m,
+    alignItems: 'center',
+  },
+  signOutButtonText: {
+    color: colors.white,
+    fontSize: theme.typography.fontSize.m,
+    fontWeight: '600',
   },
 });
 

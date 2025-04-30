@@ -12,7 +12,7 @@ import {
   Alert
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, CommonActions } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../../navigation/types';
 import { registerUser } from '../../services/auth';
@@ -20,6 +20,7 @@ import { colors } from '../../constants/colors';
 import { theme } from '../../constants/theme';
 import PhoneInput from 'react-native-phone-number-input';
 
+// Navigation type for auth stack screens
 type RegisterScreenNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'Register'>;
 
 function RegisterScreen() {
@@ -53,14 +54,16 @@ function RegisterScreen() {
 
     setIsLoading(true);
     try {
-      // Register user with additional phone number field
-      const user = await registerUser(email, password, name, formattedPhoneNumber);
+      // Register user with Firebase
+      await registerUser(email, password, name, formattedPhoneNumber);
       
-      // Immediately navigate to subscription before auth state changes
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'Subscription' }],
-      });
+      // Direct navigation to Main stack
+      navigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: 'Main' }],
+        })
+      );
     } catch (error) {
       Alert.alert('Registration Failed', 'Could not create account. Please try again.');
       console.error('Registration error:', error);

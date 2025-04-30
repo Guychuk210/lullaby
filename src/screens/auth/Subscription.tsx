@@ -9,15 +9,20 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  Keyboard,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, CommonActions } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../../navigation/types';
 import { colors } from '../../constants/colors';
 import { theme } from '../../constants/theme';
 import { updateSubscriptionStatus, checkSubscriptionStatus } from '../../services/subscription';
 import { auth } from '../../services/firebase';
+import { CommonActions } from '@react-navigation/native';
 
 type SubscriptionScreenNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'Subscription'>;
 
@@ -30,51 +35,15 @@ function SubscriptionScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
 
-  // Check if user already has subscription on component mount
-  useEffect(() => {
-    const checkExistingSubscription = async () => {
-      try {
-        const currentUser = auth.currentUser;
-        if (!currentUser) {
-          // No user logged in, don't check subscription
-          setIsInitialLoading(false);
-          return;
-        }
-
-        const hasSubscription = await checkSubscriptionStatus(currentUser.uid);
-        if (hasSubscription) {
-          // User already has subscription, navigate to home
-          navigateToHome();
-        }
-        setIsInitialLoading(false);
-      } catch (error) {
-        console.error('Error checking subscription:', error);
-        setIsInitialLoading(false);
-      }
-    };
-
-    checkExistingSubscription();
-  }, []);
-
   const navigateToHome = () => {
-    // Reset navigation at the root level
+    // Navigate to Main stack which contains Home screen
+    console.log('Navigating to Main after subscription');
     navigation.dispatch(
       CommonActions.reset({
         index: 0,
-        routes: [
-          { 
-            name: 'Auth',
-            state: {
-              routes: [{ name: 'Login' }]
-            }
-          }
-        ],
+        routes: [{ name: 'Login' }],
       })
     );
-
-    // Let the auth state listener handle the redirect to Main
-    // The Navigation component will detect the authenticated and subscribed state
-    // and show the Main navigator
   };
 
   const handleSubscribe = async () => {
@@ -167,19 +136,26 @@ function SubscriptionScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['left', 'right']}>
-      <ScrollView contentContainerStyle={styles.scrollView}>
-        <View style={styles.header}>
-          <Image
-            source={require('../../../assets/icon.png')}
-            style={styles.logo}
-            resizeMode="contain"
-          />
-          <Text style={styles.title}>Lullaby.AI</Text>
-          <Text style={styles.subtitle}>Complete Your Registration</Text>
-        </View>
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardAvoidingView}
+      >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <ScrollView 
+            contentContainerStyle={styles.scrollView}
+            keyboardShouldPersistTaps="handled"
+          >
+            <View style={styles.header}>
+              
+              <Text style={styles.title}>Lullaby.AI</Text>
+              <Text style={styles.subtitle}>Complete Your Registration</Text>
+            </View>
 
         <View style={styles.subscriptionCard}>
-          <Text style={styles.sectionTitle}>Subscription Details</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Subscription Details</Text>
+            <Text style={styles.price}>$20/mo</Text>
+          </View>
           <View style={styles.planDetails}>
             <View>
               <Text style={styles.planName}>Premium Subscription</Text>
@@ -187,98 +163,99 @@ function SubscriptionScreen() {
                 Full access to all Lullaby.AI features and services
               </Text>
             </View>
-            <Text style={styles.price}>$20.00/month</Text>
           </View>
         </View>
 
-        <View style={styles.paymentSection}>
-          <Text style={styles.sectionTitle}>Payment Information</Text>
-          
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Card Number</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="1234 5678 9012 3456"
-              value={cardNumber}
-              onChangeText={(text) => setCardNumber(formatCardNumber(text))}
-              keyboardType="numeric"
-              maxLength={19}
-            />
-          </View>
+            <View style={styles.paymentSection}>
+              <Text style={styles.sectionTitle}>Payment Information</Text>
+              
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Card Number</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="1234 5678 9012 3456"
+                  value={cardNumber}
+                  onChangeText={(text) => setCardNumber(formatCardNumber(text))}
+                  keyboardType="numeric"
+                  maxLength={19}
+                />
+              </View>
 
-          <View style={styles.row}>
-            <View style={[styles.inputContainer, styles.halfWidth]}>
-              <Text style={styles.label}>Expiry Date</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="MM/YY"
-                value={expiryDate}
-                onChangeText={(text) => setExpiryDate(formatExpiryDate(text))}
-                maxLength={5}
-                keyboardType="numeric"
-              />
+              <View style={styles.row}>
+                <View style={[styles.inputContainer, styles.halfWidth]}>
+                  <Text style={styles.label}>Expiry Date</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="MM/YY"
+                    value={expiryDate}
+                    onChangeText={(text) => setExpiryDate(formatExpiryDate(text))}
+                    maxLength={5}
+                    keyboardType="numeric"
+                  />
+                </View>
+
+                <View style={[styles.inputContainer, styles.halfWidth]}>
+                  <Text style={styles.label}>CVC</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="123"
+                    value={cvc}
+                    onChangeText={setCvc}
+                    keyboardType="numeric"
+                    maxLength={3}
+                  />
+                </View>
+              </View>
+
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Name on Card</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="John Doe"
+                  value={nameOnCard}
+                  onChangeText={setNameOnCard}
+                />
+              </View>
+
+              <TouchableOpacity
+                style={styles.subscribeButton}
+                onPress={handleSubscribe}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <ActivityIndicator color={colors.white} />
+                ) : (
+                  <Text style={styles.buttonText}>
+                    Subscribe & Continue ($20/month)
+                  </Text>
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.skipButton}
+                onPress={() => {
+                  Alert.alert(
+                    'Skip Subscription',
+                    'You can subscribe later, but some features will be limited.',
+                    [
+                      {
+                        text: 'Continue with Free Version',
+                        onPress: () => navigateToHome()
+                      },
+                      {
+                        text: 'Cancel',
+                        style: 'cancel'
+                      }
+                    ]
+                  );
+                }}
+              >
+                <Text style={styles.skipButtonText}>Skip for now</Text>
+              </TouchableOpacity>
             </View>
-
-            <View style={[styles.inputContainer, styles.halfWidth]}>
-              <Text style={styles.label}>CVC</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="123"
-                value={cvc}
-                onChangeText={setCvc}
-                keyboardType="numeric"
-                maxLength={3}
-              />
-            </View>
-          </View>
-
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Name on Card</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="John Doe"
-              value={nameOnCard}
-              onChangeText={setNameOnCard}
-            />
-          </View>
-
-          <TouchableOpacity
-            style={styles.subscribeButton}
-            onPress={handleSubscribe}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <ActivityIndicator color={colors.white} />
-            ) : (
-              <Text style={styles.buttonText}>
-                Subscribe & Continue ($20/month)
-              </Text>
-            )}
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.skipButton}
-            onPress={() => {
-              Alert.alert(
-                'Skip Subscription',
-                'You can subscribe later, but some features will be limited.',
-                [
-                  {
-                    text: 'Continue with Free Version',
-                    onPress: () => navigateToHome()
-                  },
-                  {
-                    text: 'Cancel',
-                    style: 'cancel'
-                  }
-                ]
-              );
-            }}
-          >
-            <Text style={styles.skipButtonText}>Skip for now</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
+          </ScrollView>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -287,6 +264,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  keyboardAvoidingView: {
+    flex: 1,
   },
   loadingContainer: {
     flex: 1,
@@ -301,10 +281,12 @@ const styles = StyleSheet.create({
   scrollView: {
     flexGrow: 1,
     padding: theme.spacing.l,
+    paddingBottom: theme.spacing.xxl,
   },
   header: {
     alignItems: 'center',
     marginBottom: theme.spacing.xl,
+    marginTop: theme.spacing.xl,
   },
   logo: {
     width: 80,
@@ -335,16 +317,25 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 5,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: theme.spacing.m,
+  },
   sectionTitle: {
     fontSize: theme.typography.fontSize.l,
     fontWeight: '600',
     color: colors.text,
-    marginBottom: theme.spacing.m,
   },
   planDetails: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
+  },
+  planInfo: {
+    flex: 1,
+    marginRight: theme.spacing.m,
   },
   planName: {
     fontSize: theme.typography.fontSize.m,
@@ -355,12 +346,12 @@ const styles = StyleSheet.create({
   planDescription: {
     fontSize: theme.typography.fontSize.s,
     color: colors.text,
-    maxWidth: '80%',
   },
   price: {
-    fontSize: theme.typography.fontSize.xl,
+    fontSize: theme.typography.fontSize.l,
     fontWeight: 'bold',
     color: colors.primary,
+    flexShrink: 0,
   },
   paymentSection: {
     marginTop: theme.spacing.l,

@@ -14,6 +14,10 @@ import {
 import { db } from './firebase';
 import { SensorData, SensorDevice } from '../types';
 import { auth } from './firebase';
+import { config } from '../constants/config';
+
+// Use the API URL from config
+const API_URL = config.apiUrl;
 
 /**
  * Formats a date in YYMMDD-HHMMSS format
@@ -44,7 +48,8 @@ const formatTimestamp = (date: Date | number | string = new Date()): string => {
 };
 
 // Register a new sensor device
-export const registerSensorDevice = async (userId: string, deviceName: string, deviceId: string): Promise<SensorDevice> => {
+export const registerSensorDevice = async (userId: string, deviceName: string, deviceId: string, phoneNumber: string): Promise<SensorDevice> => {
+  console.log('registering device');
   try {
     if (!userId) {
       throw new Error('User ID is required to register a device');
@@ -54,6 +59,7 @@ export const registerSensorDevice = async (userId: string, deviceName: string, d
     
     const deviceData = {
       name: deviceName,
+      phoneNumber: phoneNumber,
       isConnected: false,
       batteryLevel: 100,
       lastSyncTime: now,
@@ -64,6 +70,13 @@ export const registerSensorDevice = async (userId: string, deviceName: string, d
     const deviceRef = doc(db, 'users', userId, 'devices', deviceId);
     await setDoc(deviceRef, deviceData);
     
+    console.log('device registered');
+    
+    // After storing in Firebase, claim the device in AWS IoT
+    console.log('claiming device from AWS IoT');
+    await claimDevice(userId, deviceId, deviceName);
+    console.log('device claimed');
+    
     // Return device data with proper type conversion
     return {
       id: deviceId,
@@ -71,6 +84,43 @@ export const registerSensorDevice = async (userId: string, deviceName: string, d
     } as SensorDevice;
   } catch (error) {
     console.error('Error registering device:', error);
+    throw error;
+  }
+};
+
+/**
+ * Claims a device in the AWS IoT system through our server endpoint
+ * @param userId User ID who is claiming the device
+ * @param deviceId Device ID to claim (MAC address)
+ * @param deviceName Name of the device
+ * @returns Promise that resolves when the device is claimed
+ */
+export const claimDevice = async (userId: string, deviceId: string, deviceName: string): Promise<void> => {
+  try {
+    console.log(`Claiming device ${deviceId} for user ${userId} with name ${deviceName}`);
+    
+    const response = await fetch(`${API_URL}/sensors/claim`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        userId,
+        deviceId,
+        deviceName
+      })
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('Error claiming device:', errorData);
+      throw new Error(errorData.error || 'Failed to claim device');
+    }
+    
+    const result = await response.json();
+    console.log('Device claimed successfully:', result);
+  } catch (error) {
+    console.error('Error claiming device:', error);
     throw error;
   }
 };

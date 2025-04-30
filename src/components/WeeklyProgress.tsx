@@ -44,10 +44,10 @@ function WeeklyProgress({ events }: WeeklyProgressProps) {
   const maxCount = Math.max(...weeklyData.counts, 2); // Minimum scale of 2 for better visibility
 
   // Dimensions for the graph
-  const graphWidth = 280;
-  const graphHeight = 120;
-  const paddingX = 30;
-  const paddingY = 20;
+  const graphWidth = 360;
+  const graphHeight = 180;
+  const paddingX = 35;
+  const paddingY = 25;
   const chartWidth = graphWidth - (paddingX * 2);
   const chartHeight = graphHeight - (paddingY * 2);
 
@@ -87,7 +87,7 @@ function WeeklyProgress({ events }: WeeklyProgressProps) {
             points={points}
             fill="none"
             stroke={colors.primary}
-            strokeWidth="2"
+            strokeWidth="2.5"
           />
           
           {/* Data points */}
@@ -100,7 +100,7 @@ function WeeklyProgress({ events }: WeeklyProgressProps) {
                 key={index}
                 cx={x}
                 cy={y}
-                r={3}
+                r={4}
                 fill={colors.primary}
               />
             );
@@ -114,8 +114,8 @@ function WeeklyProgress({ events }: WeeklyProgressProps) {
               <SvgText
                 key={index}
                 x={x}
-                y={paddingY + chartHeight + 15}
-                fontSize="10"
+                y={paddingY + chartHeight + 18}
+                fontSize="12"
                 textAnchor="middle"
                 fill={colors.text}
               >
@@ -126,9 +126,9 @@ function WeeklyProgress({ events }: WeeklyProgressProps) {
           
           {/* Y-axis labels (event count markers) */}
           <SvgText
-            x={paddingX - 10}
+            x={paddingX - 12}
             y={paddingY + 5}
-            fontSize="10"
+            fontSize="12"
             textAnchor="end"
             fill={colors.text}
           >
@@ -136,9 +136,9 @@ function WeeklyProgress({ events }: WeeklyProgressProps) {
           </SvgText>
           
           <SvgText
-            x={paddingX - 10}
+            x={paddingX - 12}
             y={paddingY + (chartHeight / 2) + 5}
-            fontSize="10"
+            fontSize="12"
             textAnchor="end"
             fill={colors.text}
           >
@@ -146,9 +146,9 @@ function WeeklyProgress({ events }: WeeklyProgressProps) {
           </SvgText>
           
           <SvgText
-            x={paddingX - 10}
+            x={paddingX - 12}
             y={paddingY + chartHeight + 5}
-            fontSize="10"
+            fontSize="12"
             textAnchor="end"
             fill={colors.text}
           >
@@ -179,6 +179,7 @@ const styles = StyleSheet.create({
   graphContainer: {
     alignItems: 'center',
     justifyContent: 'center',
+    marginVertical: theme.spacing.s,
   },
 });
 

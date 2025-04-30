@@ -10,13 +10,13 @@ import {
   Switch
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, CommonActions } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
 import { colors } from '../../constants/colors';
 import { theme } from '../../constants/theme';
 import { useAuth } from '../../hooks/useAuth';
-import { signOut } from '../../services/auth';
+import { auth } from '../../services/firebase';
 import Header from '../../components/Header';
 
 type ProfileScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -28,7 +28,7 @@ function ProfileScreen() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [darkModeEnabled, setDarkModeEnabled] = useState(false);
 
-  const handleSignOut = async () => {
+  const handleSignOut = () => {
     Alert.alert(
       'Sign Out',
       'Are you sure you want to sign out?',
@@ -40,16 +40,39 @@ function ProfileScreen() {
         {
           text: 'Sign Out',
           style: 'destructive',
-          onPress: async () => {
+          onPress: () => {
             setIsLoading(true);
+            console.log('Sign out confirmed in Profile screen');
+            
+            // First navigate to the Auth screen
+            console.log('Attempting to navigate to Auth screen');
             try {
-              await signOut();
-              // Navigation will be handled by the auth state change
-            } catch (error) {
-              Alert.alert('Error', 'Failed to sign out. Please try again.');
-              console.error('Sign out error:', error);
-            } finally {
+              navigation.dispatch(
+                CommonActions.reset({
+                  index: 0,
+                  routes: [{ name: 'Auth' }]
+                })
+              );
+              
+              console.log('Navigation completed, now signing out');
+              
+              // Then sign out after navigation (with slight delay)
+              setTimeout(() => {
+                auth.signOut()
+                  .then(() => {
+                    console.log('Firebase sign out successful');
+                  })
+                  .catch(error => {
+                    console.error('Firebase sign out error:', error);
+                  })
+                  .finally(() => {
+                    setIsLoading(false);
+                  });
+              }, 500);
+            } catch (e) {
+              console.error('Navigation or signout error:', e);
               setIsLoading(false);
+              Alert.alert('Error', 'Failed to sign out. Please try again.');
             }
           },
         },

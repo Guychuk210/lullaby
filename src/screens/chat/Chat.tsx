@@ -9,6 +9,9 @@ import {
   Alert,
   TextInput,
   Modal,
+  KeyboardAvoidingView,
+  Platform,
+  Keyboard,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -81,7 +84,7 @@ function Chat() {
     if (scrollViewRef.current) {
       setTimeout(() => {
         scrollViewRef.current?.scrollToEnd({ animated: true });
-      }, 100);
+      }, 20);
     }
   }, [messages]);
 
@@ -183,170 +186,210 @@ function Chat() {
     }
   };
 
+  // Add keyboard state tracking
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+  
+  // Monitor keyboard visibility
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      'keyboardDidShow',
+      () => {
+        setKeyboardVisible(true);
+        // Scroll to bottom when keyboard appears
+        if (scrollViewRef.current) {
+          setTimeout(() => {
+            scrollViewRef.current?.scrollToEnd({ animated: true });
+          }, 100);
+        }
+      }
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      'keyboardDidHide',
+      () => {
+        setKeyboardVisible(false);
+      }
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
+
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={handleTitlePress}>
-          <Text style={styles.headerTitle}>Lullaby.AI</Text>
-        </TouchableOpacity>
-        
-        {/* Debug Menu Modal */}
-        <Modal
-          visible={showDebugMenu}
-          transparent={true}
-          animationType="slide"
-          onRequestClose={() => setShowDebugMenu(false)}
-        >
-          <View style={styles.debugModalContainer}>
-            <View style={styles.debugModalContent}>
-              <Text style={styles.debugTitle}>Debug Menu</Text>
-              
-              <TouchableOpacity 
-                style={styles.debugButton}
-                onPress={runVertexAITest}
-              >
-                <Text style={styles.debugButtonText}>Test VertexAI Connection</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={[styles.debugButton, { backgroundColor: 'gray' }]}
-                onPress={() => setShowDebugMenu(false)}
-              >
-                <Text style={styles.debugButtonText}>Close</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Modal>
-        
-        <View style={styles.headerButtons}>
-          <TouchableOpacity 
-            style={[styles.chatButton, !showNotifications && styles.activeButton]}
-            onPress={() => setShowNotifications(false)}
-          >
-            <Ionicons name="chatbubble-ellipses-outline" size={20} color={colors.white} />
-            <Text style={styles.chatButtonText}>Bedwetting Expert</Text>
+    <KeyboardAvoidingView 
+      style={styles.keyboardAvoidingContainer}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 1 : 1}
+    >
+      <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={handleTitlePress}>
+            <Text style={styles.headerTitle}>Lullaby.AI</Text>
           </TouchableOpacity>
           
-          <TouchableOpacity 
-            style={[styles.notificationButton, showNotifications && styles.activeNotificationButton]}
-            onPress={toggleNotifications}
+          {/* Debug Menu Modal */}
+          <Modal
+            visible={showDebugMenu}
+            transparent={true}
+            animationType="slide"
+            onRequestClose={() => setShowDebugMenu(false)}
           >
-            <Ionicons name="notifications-outline" size={20} color={showNotifications ? colors.white : "black"} />
-            <Text style={[
-              styles.notificationButtonText, 
-              showNotifications && styles.activeNotificationButtonText
-            ]}>Notifications</Text>
-            {!showNotifications && (
-              <View style={styles.notificationBadge}>
-                <Text style={styles.notificationBadgeText}>3</Text>
+            <View style={styles.debugModalContainer}>
+              <View style={styles.debugModalContent}>
+                <Text style={styles.debugTitle}>Debug Menu</Text>
+                
+                <TouchableOpacity 
+                  style={styles.debugButton}
+                  onPress={runVertexAITest}
+                >
+                  <Text style={styles.debugButtonText}>Test VertexAI Connection</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={[styles.debugButton, { backgroundColor: 'gray' }]}
+                  onPress={() => setShowDebugMenu(false)}
+                >
+                  <Text style={styles.debugButtonText}>Close</Text>
+                </TouchableOpacity>
               </View>
-            )}
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {showNotifications ? (
-        <>
-          {/* Notifications View */}
-          <Text style={styles.screenTitle}>Notifications</Text>
-          <ScrollView style={styles.contentContainer}>
-            {notifications.map((notification) => (
-              <View key={notification.id} style={styles.notificationCard}>
-                <View style={styles.notificationContent}>
-                  <Text style={styles.notificationTitle}>{notification.title}</Text>
-                  <Text style={styles.notificationMessage}>{notification.message}</Text>
-                  <Text style={styles.notificationDate}>{notification.date}</Text>
-                </View>
-              </View>
-            ))}
-          </ScrollView>
-        </>
-      ) : (
-        <>
-          {/* Chat title with reset button */}
-          <View style={styles.chatHeader}>
-            <Text style={styles.chatTitle}>Bedwetting Expert Chat</Text>
-            <TouchableOpacity onPress={handleResetChat} style={styles.resetButton}>
-              <Ionicons name="refresh" size={20} color={colors.text} />
-            </TouchableOpacity>
-          </View>
-
-          {/* Chat messages */}
-          <ScrollView 
-            ref={scrollViewRef}
-            style={styles.chatContainer}
-            contentContainerStyle={styles.chatContentContainer}
-          >
-            {messages.map((message) => (
-              <View 
-                key={message.id} 
-                style={[
-                  styles.messageContainer,
-                  message.sender === 'user' ? styles.userMessageContainer : styles.aiMessageContainer
-                ]}
-              >
-                {message.sender === 'ai' && (
-                  <View style={styles.messageHeader}>
-                    <Ionicons name="person-circle-outline" size={20} color="black" />
-                    <Text style={styles.messageSender}>Bedwetting Expert</Text>
-                    <Text style={styles.messageTime}>{formatTime(message.timestamp)}</Text>
-                  </View>
-                )}
-                <View style={[
-                  styles.messageBubble,
-                  message.sender === 'user' ? styles.userMessageBubble : styles.aiMessageBubble
-                ]}>
-                  <Text style={[
-                    styles.messageText,
-                    message.sender === 'user' ? styles.userMessageText : styles.aiMessageText
-                  ]}>
-                    {message.text}
-                  </Text>
-                </View>
-                {message.sender === 'user' && (
-                  <Text style={styles.userMessageTime}>{formatTime(message.timestamp)}</Text>
-                )}
-              </View>
-            ))}
-            {isLoading && (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator size="small" color={colors.primary} />
-                <Text style={styles.loadingText}>Expert is thinking...</Text>
-              </View>
-            )}
-          </ScrollView>
-
-          {/* Message input */}
-          <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.input}
-              placeholder="Type your message..."
-              value={inputText}
-              onChangeText={setInputText}
-              multiline={true}
-              maxLength={500}
-            />
+            </View>
+          </Modal>
+          
+          <View style={styles.headerButtons}>
             <TouchableOpacity 
-              style={[styles.sendButton, !inputText.trim() && styles.sendButtonDisabled]} 
-              onPress={handleSend}
-              disabled={!inputText.trim() || isLoading}
+              style={[styles.chatButton, !showNotifications && styles.activeButton]}
+              onPress={() => setShowNotifications(false)}
             >
-              <Ionicons 
-                name="send" 
-                size={20} 
-                color={inputText.trim() ? colors.white : colors.gray[400]} 
-              />
+              <Ionicons name="chatbubble-ellipses-outline" size={20} color={colors.white} />
+              <Text style={styles.chatButtonText}>Bedwetting Expert</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={[styles.notificationButton, showNotifications && styles.activeNotificationButton]}
+              onPress={toggleNotifications}
+            >
+              <Ionicons name="notifications-outline" size={20} color={showNotifications ? colors.white : "black"} />
+              <Text style={[
+                styles.notificationButtonText, 
+                showNotifications && styles.activeNotificationButtonText
+              ]}>Notifications</Text>
+              {!showNotifications && (
+                <View style={styles.notificationBadge}>
+                  <Text style={styles.notificationBadgeText}>3</Text>
+                </View>
+              )}
             </TouchableOpacity>
           </View>
-        </>
-      )}
+        </View>
 
-    </SafeAreaView>
+        {showNotifications ? (
+          <>
+            {/* Notifications View */}
+            <Text style={styles.screenTitle}>Notifications</Text>
+            <ScrollView style={styles.contentContainer}>
+              {notifications.map((notification) => (
+                <View key={notification.id} style={styles.notificationCard}>
+                  <View style={styles.notificationContent}>
+                    <Text style={styles.notificationTitle}>{notification.title}</Text>
+                    <Text style={styles.notificationMessage}>{notification.message}</Text>
+                    <Text style={styles.notificationDate}>{notification.date}</Text>
+                  </View>
+                </View>
+              ))}
+            </ScrollView>
+          </>
+        ) : (
+          <>
+            {/* Chat title with reset button */}
+            <View style={styles.chatHeader}>
+              <Text style={styles.chatTitle}>Bedwetting Expert Chat</Text>
+              <TouchableOpacity onPress={handleResetChat} style={styles.resetButton}>
+                <Ionicons name="refresh" size={20} color={colors.text} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Chat messages */}
+            <ScrollView 
+              ref={scrollViewRef}
+              style={styles.chatContainer}
+              contentContainerStyle={styles.chatContentContainer}
+              keyboardShouldPersistTaps="handled"
+            >
+              {messages.map((message) => (
+                <View 
+                  key={message.id} 
+                  style={[
+                    styles.messageContainer,
+                    message.sender === 'user' ? styles.userMessageContainer : styles.aiMessageContainer
+                  ]}
+                >
+                  {message.sender === 'ai' && (
+                    <View style={styles.messageHeader}>
+                      <Ionicons name="person-circle-outline" size={20} color="black" />
+                      <Text style={styles.messageSender}>Bedwetting Expert</Text>
+                      <Text style={styles.messageTime}>{formatTime(message.timestamp)}</Text>
+                    </View>
+                  )}
+                  <View style={[
+                    styles.messageBubble,
+                    message.sender === 'user' ? styles.userMessageBubble : styles.aiMessageBubble
+                  ]}>
+                    <Text style={[
+                      styles.messageText,
+                      message.sender === 'user' ? styles.userMessageText : styles.aiMessageText
+                    ]}>
+                      {message.text}
+                    </Text>
+                  </View>
+                  {message.sender === 'user' && (
+                    <Text style={styles.userMessageTime}>{formatTime(message.timestamp)}</Text>
+                  )}
+                </View>
+              ))}
+              {isLoading && (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="small" color={colors.primary} />
+                  <Text style={styles.loadingText}>Expert is thinking...</Text>
+                </View>
+              )}
+            </ScrollView>
+
+            {/* Message input */}
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.input}
+                placeholder="Type your message..."
+                value={inputText}
+                onChangeText={setInputText}
+                multiline={true}
+                maxLength={500}
+              />
+              <TouchableOpacity 
+                style={[styles.sendButton, !inputText.trim() && styles.sendButtonDisabled]} 
+                onPress={handleSend}
+                disabled={!inputText.trim() || isLoading}
+              >
+                <Ionicons 
+                  name="send" 
+                  size={20} 
+                  color={inputText.trim() ? colors.white : colors.gray[400]} 
+                />
+              </TouchableOpacity>
+            </View>
+          </>
+        )}
+
+      </SafeAreaView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
+  keyboardAvoidingContainer: {
+    flex: 1,
+  },
   container: {
     flex: 1,
     backgroundColor: colors.white,

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   View, 
   Text, 
@@ -12,15 +12,14 @@ import {
   Alert
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, CommonActions } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../../navigation/types';
 import { signIn } from '../../services/auth';
 import { colors } from '../../constants/colors';
 import { theme } from '../../constants/theme';
-import { auth } from '../../services/firebase';
-import { checkSubscriptionStatus } from '../../services/subscription';
 
+// Navigation type for auth stack screens
 type LoginScreenNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'Login'>;
 
 function LoginScreen() {
@@ -29,63 +28,24 @@ function LoginScreen() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   
-  // Add logging for component mounting
-  useEffect(() => {
-    console.log('LoginScreen mounted');
-    
-    // Check if user is already logged in
-    const currentUser = auth.currentUser;
-    console.log('Current user on mount:', currentUser?.email);
-    
-    // Set up an auth state listener for testing purposes
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      console.log('Auth state changed in LoginScreen:', user?.email);
-      if (user) {
-        console.log('User is signed in with ID:', user.uid);
-        checkAuthAndSubscription(user.uid);
-      }
-    });
-    
-    return () => {
-      console.log('LoginScreen unmounting');
-      unsubscribe();
-    };
-  }, []);
-  
-  // Helper function to check auth and subscription status
-  const checkAuthAndSubscription = async (userId: string) => {
-    console.log('Checking subscription status for user:', userId);
-    try {
-      const hasSubscription = await checkSubscriptionStatus(userId);
-      console.log('Subscription status:', hasSubscription);
-      
-      // Log navigation state
-      const navState = navigation.getState();
-      console.log('Current navigation state:', JSON.stringify(navState, null, 2));
-    } catch (error) {
-      console.error('Error checking subscription:', error);
-    }
-  };
-
   const handleLogin = async () => {
-    console.log('Login button pressed with email:', email);
-    
     if (!email || !password) {
-      console.log('Email or password is empty');
       Alert.alert('Error', 'Please enter both email and password');
       return;
     }
 
     setIsLoading(true);
     try {
-      console.log('Attempting to sign in...');
-      const user = await signIn(email, password);
-      console.log('Sign in successful for user:', user.email);
-      console.log('User ID:', user.uid);
-      console.log('Display Name:', user.displayName);
+      // Sign in with Firebase
+      await signIn(email, password);
       
-      // Navigation will be handled by the auth state change in the root navigator
-      console.log('Waiting for auth state listener to handle navigation...');
+      // Direct navigation to Main stack
+      navigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: 'Main' }],
+        })
+      );
     } catch (error) {
       console.error('Login error:', error);
       Alert.alert('Login Failed', 'Invalid email or password. Please try again.');

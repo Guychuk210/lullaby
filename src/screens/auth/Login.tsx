@@ -12,7 +12,7 @@ import {
   Alert
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, CommonActions } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../../navigation/types';
 import { signIn } from '../../services/auth';
@@ -36,16 +36,9 @@ function LoginScreen() {
 
     setIsLoading(true);
     try {
-      // Sign in with Firebase
+      // Sign in with Firebase - navigation will be handled automatically by the RootNavigator
+      // when auth state changes
       await signIn(email, password);
-      
-      // Direct navigation to Main stack
-      navigation.dispatch(
-        CommonActions.reset({
-          index: 0,
-          routes: [{ name: 'Main' }],
-        })
-      );
     } catch (error) {
       console.error('Login error:', error);
       Alert.alert('Login Failed', 'Invalid email or password. Please try again.');

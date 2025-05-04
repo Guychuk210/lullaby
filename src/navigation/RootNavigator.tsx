@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { ActivityIndicator, View } from 'react-native';
 import { RootStackParamList } from './types';
+import { useAuth } from '../hooks/useAuth';
 
 // Import navigators
 import AuthNavigator from './AuthNavigator';
@@ -14,13 +16,23 @@ import SettingsScreen from '../screens/settings/Settings';
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 function RootNavigator() {
-  // Simple navigator with all screens available, no auth checking
+  const { user, isLoading } = useAuth();
+  
+  // Show loading indicator while checking authentication status
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
+
   return (
     <Stack.Navigator
       screenOptions={{
         headerShown: false,
       }}
-      initialRouteName="Auth"
+      initialRouteName={user ? "Main" : "Auth"}
     >
       <Stack.Screen 
         name="Auth" 

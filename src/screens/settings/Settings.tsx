@@ -9,12 +9,12 @@ import {
   Alert
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { CommonActions, useNavigation } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import { colors } from '../../constants/colors';
 import { theme } from '../../constants/theme';
 import { useAuth } from '../../hooks/useAuth';
 import Header from '../../components/Header';
-import { auth } from '../../services/firebase';
+import { signOut } from '../../services/auth';
 
 function SettingsScreen() {
   const navigation = useNavigation();
@@ -33,17 +33,10 @@ function SettingsScreen() {
   const handleSignOut = async () => {
     setIsLoading(true);
     try {
-      // Force sign out by directly clearing Firebase auth
-      await auth.signOut();
-      
-      // Hard reload the app to force reset to initial screen
-      console.log('Sign out successful, now redirecting to login screen');
-      navigation.dispatch(
-        CommonActions.reset({
-          index: 0,
-          routes: [{ name: 'Main' }],
-        })
-      );
+      // Sign out - the auth state change will be detected by useAuth
+      // and the RootNavigator will automatically navigate to the Auth screen
+      await signOut();
+      console.log('Sign out successful');
     } catch (error) {
       console.error('Sign out error:', error);
       Alert.alert('Error', 'Failed to sign out. Please try again.');

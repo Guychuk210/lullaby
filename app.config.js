@@ -26,6 +26,10 @@ export default {
     web: {
       favicon: './assets/favicon.png',
     },
+    // Plugins configuration
+    plugins: [
+      "expo-secure-store"
+    ],
     // EAS Update configuration
     updates: {
       url: "https://u.expo.dev/2dc917e8-7c39-40c8-a21d-2d67d69361cd"

@@ -12,16 +12,19 @@ import {
   KeyboardAvoidingView,
   Platform,
   Keyboard,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../constants/colors';
 import { theme } from '../../constants/theme';
 import { useVertexAIChat } from '../../hooks/useVertexAIChat';
+import { useNotifications } from '../../hooks/useNotifications';
 import { config } from '../../constants/config';
 import Header from '../../components/Header';
 import { Message } from '../../components/chat/ChatBox';
 import { testVertexAISetup } from '../../services/testVertexAI';
+import { useRoute } from '@react-navigation/native';
 
 // Sample notification data
 const notifications = [
@@ -51,9 +54,25 @@ const notifications = [
 function Chat() {
   console.log('[Chat] Component initializing');
   
-  const [showNotifications, setShowNotifications] = useState(false);
+  const route = useRoute();
+  const params = route.params as { showNotifications?: boolean } || {};
+  
+  // Set initial state based on navigation params
+  const [showNotifications, setShowNotifications] = useState(params.showNotifications || false);
   const scrollViewRef = useRef<ScrollView>(null);
   const [initError, setInitError] = useState<Error | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  
+  // Use the notifications hook to get and manage notifications
+  const { 
+    notifications, 
+    unreadCount, 
+    isLoading: notificationsLoading, 
+    error: notificationsError,
+    refreshNotifications,
+    markAsRead,
+    markAllAsRead
+  } = useNotifications();
   
   // Define the initial message
   const initialMessage: Message = {
@@ -77,6 +96,7 @@ function Chat() {
   console.log('[Chat] Current message count:', messages.length);
   console.log('[Chat] Is loading state:', isLoading);
   console.log('[Chat] Error state:', error?.message || 'No error');
+  console.log('[Chat] Notification count:', notifications.length);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -158,6 +178,13 @@ function Chat() {
     setInputText('');
   };
 
+  // Handle pull-to-refresh for notifications
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await refreshNotifications();
+    setRefreshing(false);
+  };
+
   // Add debug counter
   const [debugTapCount, setDebugTapCount] = useState(0);
   const [showDebugMenu, setShowDebugMenu] = useState(false);
@@ -226,7 +253,7 @@ function Chat() {
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={handleTitlePress}>
-            <Text style={styles.headerTitle}>Lullaby.AI</Text>
+            <Text style={styles.headerTitle}>Numah.AI</Text>
           </TouchableOpacity>
           
           {/* Debug Menu Modal */}
@@ -285,9 +312,9 @@ function Chat() {
                 styles.notificationButtonText, 
                 showNotifications && styles.activeNotificationButtonText
               ]}>Notifications</Text>
-              {!showNotifications && (
+              {!showNotifications && unreadCount > 0 && (
                 <View style={styles.notificationBadge}>
-                  <Text style={styles.notificationBadgeText}>3</Text>
+                  <Text style={styles.notificationBadgeText}>{unreadCount}</Text>
                 </View>
               )}
             </TouchableOpacity>
@@ -298,16 +325,59 @@ function Chat() {
           <>
             {/* Notifications View */}
             <Text style={styles.screenTitle}>Notifications</Text>
-            <ScrollView style={styles.contentContainer}>
-              {notifications.map((notification) => (
-                <View key={notification.id} style={styles.notificationCard}>
-                  <View style={styles.notificationContent}>
-                    <Text style={styles.notificationTitle}>{notification.title}</Text>
-                    <Text style={styles.notificationMessage}>{notification.message}</Text>
-                    <Text style={styles.notificationDate}>{notification.date}</Text>
-                  </View>
+            <ScrollView 
+              style={styles.contentContainer}
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={onRefresh}
+                  colors={[colors.primary]}
+                  tintColor={colors.primary}
+                />
+              }
+            >
+              {notificationsLoading && !refreshing ? (
+                <View style={styles.loaderContainer}>
+                  <ActivityIndicator size="large" color={colors.primary} />
+                  <Text style={styles.loaderText}>Loading notifications...</Text>
                 </View>
-              ))}
+              ) : notificationsError ? (
+                <View style={styles.errorContainer}>
+                  <Ionicons name="alert-circle-outline" size={24} color={colors.error} />
+                  <Text style={styles.errorText}>{notificationsError}</Text>
+                  <TouchableOpacity 
+                    style={styles.retryButton}
+                    onPress={refreshNotifications}
+                  >
+                    <Text style={styles.retryButtonText}>Retry</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : notifications.length === 0 ? (
+                <View style={styles.emptyContainer}>
+                  <Ionicons name="notifications-off-outline" size={50} color={colors.gray[400]} />
+                  <Text style={styles.emptyText}>No notifications yet</Text>
+                </View>
+              ) : (
+                notifications.map((notification) => (
+                  <TouchableOpacity 
+                    key={notification.id} 
+                    style={[
+                      styles.notificationCard,
+                      !notification.read && styles.unreadNotification
+                    ]}
+                    onPress={() => markAsRead(notification.id)}
+                  >
+                    <View style={styles.notificationContent}>
+                      {!notification.read && (
+                        <View style={styles.unreadIndicator} />
+                      )}
+                      <Text style={styles.notificationTitle}>{notification.title}</Text>
+                      <Text style={styles.notificationMessage}>{notification.message}</Text>
+                      <Text style={styles.notificationDate}>{notification.date}</Text>
+                    </View>
+                  </TouchableOpacity>
+                ))
+              )}
             </ScrollView>
           </>
         ) : (
@@ -680,6 +750,64 @@ const styles = StyleSheet.create({
   debugButtonText: {
     color: 'white',
     fontWeight: 'bold',
+  },
+  // Add new styles for notification features
+  loaderContainer: {
+    padding: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loaderText: {
+    marginTop: 10,
+    color: colors.gray[500],
+    fontSize: 14,
+  },
+  errorContainer: {
+    padding: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  errorText: {
+    marginTop: 10,
+    color: colors.error,
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  retryButton: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    borderRadius: 4,
+    marginTop: 10,
+  },
+  retryButtonText: {
+    color: colors.white,
+    fontWeight: 'bold',
+  },
+  emptyContainer: {
+    padding: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyText: {
+    marginTop: 10,
+    color: colors.gray[500],
+    fontSize: 16,
+  },
+  unreadNotification: {
+    backgroundColor: colors.gray[100],
+    borderLeftWidth: 3,
+    borderLeftColor: colors.primary,
+  },
+  unreadIndicator: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.primary,
+    position: 'absolute',
+    right: 0,
+    top: 0,
   },
 });
 

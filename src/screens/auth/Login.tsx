@@ -55,7 +55,7 @@ function LoginScreen() {
       >
         <ScrollView contentContainerStyle={styles.scrollView}>
           <View style={styles.header}>
-            <Text style={styles.title}>Lullaby</Text>
+            <Text style={styles.title}>Numah.AI</Text>
             <Text style={styles.subtitle}>Sign in to your account</Text>
           </View>
 

@@ -147,7 +147,7 @@ function SubscriptionScreen() {
           >
             <View style={styles.header}>
               
-              <Text style={styles.title}>Lullaby.AI</Text>
+              <Text style={styles.title}>Numah.AI</Text>
               <Text style={styles.subtitle}>Complete Your Registration</Text>
             </View>
 
@@ -160,7 +160,7 @@ function SubscriptionScreen() {
             <View>
               <Text style={styles.planName}>Premium Subscription</Text>
               <Text style={styles.planDescription}>
-                Full access to all Lullaby.AI features and services
+                Full access to all Numah.AI features and services
               </Text>
             </View>
           </View>

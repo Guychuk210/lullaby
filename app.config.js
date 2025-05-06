@@ -1,6 +1,6 @@
 import 'dotenv/config';
 
-export default {
+module.exports = {
   expo: {
     name: 'Lullaby',
     slug: 'lullaby',
@@ -8,6 +8,7 @@ export default {
     orientation: 'portrait',
     icon: './assets/icon.png',
     userInterfaceStyle: 'light',
+    newArchEnabled: true,
     splash: {
       image: './assets/splash.png',
       resizeMode: 'contain',
@@ -16,12 +17,18 @@ export default {
     assetBundlePatterns: ['**/*'],
     ios: {
       supportsTablet: true,
+      bundleIdentifier: 'com.guylevy210.lullaby',
+      buildNumber: '1.0.0',
+      infoPlist: {
+        ITSAppUsesNonExemptEncryption: false
+      }
     },
     android: {
       adaptiveIcon: {
         foregroundImage: './assets/adaptive-icon.png',
         backgroundColor: '#ffffff',
       },
+      package: 'com.guylevy210.lullaby'
     },
     web: {
       favicon: './assets/favicon.png',
@@ -57,6 +64,7 @@ export default {
       VERTEX_AI_PROJECT_ID: process.env.VERTEX_AI_PROJECT_ID || '284266420931',
       VERTEX_AI_LOCATION: process.env.VERTEX_AI_LOCATION || 'global',
       VERTEX_AI_ENGINE_ID: process.env.VERTEX_AI_ENGINE_ID || 'bed-wetting-expert_1743595681051',
-    }
+    },
+    owner: "guylevy210"
   },
 }; 

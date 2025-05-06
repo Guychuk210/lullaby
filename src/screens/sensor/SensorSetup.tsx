@@ -34,7 +34,7 @@ function SensorSetup() {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
-  const totalSteps = 3;
+  const totalSteps = 2;
 
   const handleRegisterDevice = async () => {
     if (!user) {
@@ -95,39 +95,23 @@ function SensorSetup() {
       case 1:
         return (
           <View style={styles.stepContainer}>
-            <Text style={styles.stepTitle}>Step 1: Prepare Your Device</Text>
+            <Text style={styles.stepTitle}>Step 1: Connect Your Device</Text>
             <Text style={styles.stepDescription}>
-              Make sure your Lullaby sensor is charged and ready to be paired.
-              Press the power button on the device to turn it on.
+              Follow these steps to connect your device to your home network:
             </Text>
-            <View style={styles.imageContainer}>
-              {/* Placeholder for device image */}
-              <View style={styles.imagePlaceholder}>
-                <Text style={styles.imagePlaceholderText}>Device Image</Text>
-              </View>
+            <View style={styles.instructionsList}>
+              <Text style={styles.instructionItem}>1. Turn on the sensor</Text>
+              <Text style={styles.instructionItem}>2. Turn off cellular data on this phone</Text>
+              <Text style={styles.instructionItem}>3. Look for the sensor's WiFi in your settings and connect to it</Text>
+              <Text style={styles.instructionItem}>4. Go to this address: 192.168.4.1</Text>
+              <Text style={styles.instructionItem}>5. Choose the home WiFi and type in the password to connect the sensor to your home network</Text>
             </View>
           </View>
         );
       case 2:
         return (
           <View style={styles.stepContainer}>
-            <Text style={styles.stepTitle}>Step 2: Connect Your Device</Text>
-            <Text style={styles.stepDescription}>
-              Press and hold the pairing button on your device until the LED light starts blinking.
-              This indicates that the device is in pairing mode.
-            </Text>
-            <View style={styles.imageContainer}>
-              {/* Placeholder for connection image */}
-              <View style={styles.imagePlaceholder}>
-                <Text style={styles.imagePlaceholderText}>Connection Image</Text>
-              </View>
-            </View>
-          </View>
-        );
-      case 3:
-        return (
-          <View style={styles.stepContainer}>
-            <Text style={styles.stepTitle}>Step 3: Name Your Device</Text>
+            <Text style={styles.stepTitle}>Step 2: Name Your Device</Text>
             <Text style={styles.stepDescription}>
               Give your device a name to easily identify it in the app.
             </Text>
@@ -405,6 +389,15 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontSize: theme.typography.fontSize.m,
     fontWeight: '600',
+  },
+  instructionsList: {
+    marginBottom: theme.spacing.l,
+  },
+  instructionItem: {
+    fontSize: theme.typography.fontSize.m,
+    color: colors.text,
+    marginBottom: theme.spacing.m,
+    lineHeight: theme.typography.lineHeight.m,
   },
 });
 

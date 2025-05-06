@@ -4,23 +4,38 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../constants/colors';
 import { theme } from '../constants/theme';
 import { useNavigation } from '@react-navigation/native';
+import { useNotifications } from '../hooks/useNotifications';
 
 interface HeaderProps {
   notificationCount?: number;
   onNotificationPress?: () => void;
+  useCustomNotifications?: boolean; // Flag to control whether to use the hook or passed props
 }
 
-function Header({ notificationCount = 0, onNotificationPress }: HeaderProps) {
-  const navigation = useNavigation();
+function Header({ notificationCount, onNotificationPress, useCustomNotifications = false }: HeaderProps) {
+  const navigation = useNavigation<any>(); // Use any type to avoid type errors with navigation
+  
+  // Always use the notifications hook to get the accurate unread count
+  const { unreadCount } = useNotifications();
+  
+  // Use the hook's unreadCount directly for display
+  const displayCount = unreadCount;
 
   const handleNotificationPress = () => {
     if (onNotificationPress) {
+      // Use custom handler if provided
       onNotificationPress();
     } else {
-      // Default navigation to notifications screen
-      navigation.navigate('Main', { screen: 'History' });
+      // Navigate to Chat screen and show notifications section
+      navigation.navigate('Main', { 
+        screen: 'Chat',
+        params: { showNotifications: true }
+      });
     }
   };
+
+  // Add debug log to verify the unread count
+  console.log('[Header] Unread notification count:', displayCount);
 
   return (
     <View style={styles.header}>
@@ -28,16 +43,16 @@ function Header({ notificationCount = 0, onNotificationPress }: HeaderProps) {
         barStyle="dark-content"
         backgroundColor={colors.background}
       />
-      <Text style={styles.title}>Lullaby.AI</Text>
+      <Text style={styles.title}>Numah.AI</Text>
       <TouchableOpacity 
         style={styles.notificationButton}
         onPress={handleNotificationPress}
       >
         <Ionicons name="notifications" size={24} color={colors.text} />
-        {notificationCount > 0 && (
+        {displayCount > 0 && (
           <View style={styles.notificationBadge}>
             <Text style={styles.notificationCount}>
-              {notificationCount > 9 ? '9+' : notificationCount}
+              {displayCount > 9 ? '9+' : displayCount}
             </Text>
           </View>
         )}

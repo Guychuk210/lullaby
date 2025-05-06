@@ -10,64 +10,24 @@ interface SensorStatusCardProps {
 }
 
 function SensorStatusCard({ device }: SensorStatusCardProps) {
-  // Calculate signal strength based on some logic (placeholder)
-  const getSignalStrength = (): { text: string; level: number } => {
-    // This would be based on actual signal data in a real app
-    // For now, just return a placeholder value
-    return { text: 'Excellent', level: 4 };
-  };
-
-  const signalInfo = getSignalStrength();
-  
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{device.name}</Text>
-      
-      <View style={styles.statusGrid}>
-        {/* Signal Strength */}
-        <View style={styles.statusItem}>
-          <View style={styles.signalIcon}>
-            {[1, 2, 3, 4].map((bar) => (
-              <View 
-                key={`signal-${bar}`}
-                style={[
-                  styles.signalBar, 
-                  { 
-                    height: 4 + (bar * 3),
-                    backgroundColor: bar <= signalInfo.level ? colors.primary : colors.gray[300]
-                  }
-                ]} 
-              />
-            ))}
-          </View>
-          <Text style={styles.statusLabel}>Signal</Text>
-          <Text style={styles.statusValue}>{signalInfo.text}</Text>
-        </View>
-        
-        {/* Battery Level */}
-        <View style={styles.statusItem}>
-          <View style={styles.batteryIcon}>
-            <Ionicons 
-              name="battery-half" 
-              size={24} 
-              color={device.batteryLevel > 20 ? colors.primary : colors.error} 
-            />
-          </View>
-          <Text style={styles.statusLabel}>Battery</Text>
-          <Text style={styles.statusValue}>{device.batteryLevel}%</Text>
-        </View>
-        
-        {/* Status */}
-        <View style={styles.statusItem}>
-          <View style={styles.statusIcon}>
-            <Ionicons 
-              name="shield" 
-              size={24} 
-              color={device.isConnected ? colors.success : colors.error} 
-            />
-          </View>
-          <Text style={styles.statusLabel}>Status</Text>
-          <Text style={styles.statusValue}>{device.isConnected ? 'Active' : 'Inactive'}</Text>
+      <View style={styles.contentRow}>
+        <Text style={styles.title}>{device.name}</Text>
+        <View style={styles.statusContainer}>
+          <Text style={styles.statusLabel}>Status:</Text>
+          <Ionicons 
+            name="shield" 
+            size={16} 
+            color={device.isConnected ? colors.success : colors.error} 
+            style={styles.statusIcon}
+          />
+          <Text style={[
+            styles.statusText,
+            { color: device.isConnected ? colors.success : colors.error }
+          ]}>
+            {device.isConnected ? 'Active' : 'Inactive'}
+          </Text>
         </View>
       </View>
     </View>
@@ -80,59 +40,35 @@ const styles = StyleSheet.create({
     borderRadius: theme.borderRadius.m,
     borderColor: colors.border,
     borderWidth: 1,
-    padding: theme.spacing.l,
+    padding: theme.spacing.m,
     marginBottom: theme.spacing.m,
-    // shadowColor: colors.black,
-    // shadowOffset: { width: 0, height: 2 },
-    // shadowOpacity: 0.1,
-    // shadowRadius: 4,
-    // elevation: 2,
+  },
+  contentRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   title: {
     fontSize: theme.typography.fontSize.m,
     fontWeight: '600',
     color: colors.text,
-    marginBottom: theme.spacing.m,
-  },
-  statusGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  },
-  statusItem: {
-    alignItems: 'center',
     flex: 1,
   },
-  signalIcon: {
+  statusContainer: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
-    height: 24,
-    marginBottom: theme.spacing.s,
-  },
-  signalBar: {
-    width: 3,
-    marginHorizontal: 1,
-    borderRadius: 1,
-  },
-  batteryIcon: {
-    height: 24,
-    justifyContent: 'center',
-    marginBottom: theme.spacing.s,
-  },
-  statusIcon: {
-    height: 24,
-    justifyContent: 'center',
-    marginBottom: theme.spacing.s,
+    alignItems: 'center',
   },
   statusLabel: {
     fontSize: theme.typography.fontSize.s,
     color: colors.gray[500],
-    marginBottom: theme.spacing.xs,
+    marginRight: theme.spacing.xs,
   },
-  statusValue: {
+  statusIcon: {
+    marginRight: theme.spacing.xs,
+  },
+  statusText: {
     fontSize: theme.typography.fontSize.s,
     fontWeight: '600',
-    color: colors.text,
   },
 });
 

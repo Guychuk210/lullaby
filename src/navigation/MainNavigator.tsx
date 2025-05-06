@@ -3,6 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MainTabParamList } from './types';
 import { colors } from '../constants/colors';
 import { Ionicons } from '@expo/vector-icons';
+import { Platform } from 'react-native';
 
 import HomeScreen from '../screens/home/Home';
 import HistoryScreen from '../screens/history/History';
@@ -25,20 +26,24 @@ function MainNavigator() {
           backgroundColor: colors.white,
           borderTopColor: colors.gray[200],
           paddingTop: 5,
-          height: 80,
-          paddingBottom: 5,
+          height: Platform.OS === 'android' ? 60 : 80,
+          paddingBottom: Platform.OS === 'android' ? 10 : 5,
           elevation: 8,
           shadowOpacity: 0.1,
           shadowRadius: 4,
           shadowColor: colors.black,
           shadowOffset: { width: 0, height: -2 },
+          // Add safe area insets for Android
+          safeAreaInsets: { bottom: 0 },
         },
         tabBarLabelStyle: {
           fontSize: 12,
           fontWeight: '500',
           marginTop: 5,
+          paddingBottom: Platform.OS === 'android' ? 5 : 0,
         },
       }}
+      safeAreaInsets={{ bottom: 0 }}
     >
       <Tab.Screen 
         name="Home" 

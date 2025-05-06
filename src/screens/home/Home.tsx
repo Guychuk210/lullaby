@@ -328,17 +328,13 @@ function HomeScreen() {
       
       <Text style={styles.sectionTitle}>Resources</Text>
       <Resources />
-      
-      <TouchableOpacity style={styles.addDeviceButton} onPress={handleAddDevice}>
-        <Text style={styles.addDeviceButtonText}>Add Another Device</Text>
-      </TouchableOpacity>
     </>
   );
 
   const guidanceVideos = [
     {
       id: '1',
-      title: 'Welcome to Lullaby.AI!',
+      title: 'Welcome to Numah.AI!',
       duration: '3:45',
       onPress: () => Linking.openURL('https://youtube.com/watch?v=m7Igg3jgXBU'),
     },
@@ -406,7 +402,7 @@ function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <Header notificationCount={3} />
+      <Header />
       
       <View style={styles.tabContainer}>
         <TouchableOpacity 

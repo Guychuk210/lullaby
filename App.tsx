@@ -4,6 +4,7 @@ import { StyleSheet, View, LogBox } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
 import Navigation from './src/navigation';
 import { colors } from './src/constants/colors';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 // Ignore all defaultProps deprecation warnings from the react-native-phone-number-input library
 LogBox.ignoreLogs([
@@ -46,10 +47,12 @@ export default function App() {
   }
 
   return (
-    <View style={styles.container} onLayout={onLayoutRootView}>
-      <StatusBar style="light" translucent backgroundColor="transparent" />
-      <Navigation />
-    </View>
+    <SafeAreaProvider>
+      <View style={styles.container} onLayout={onLayoutRootView}>
+        <StatusBar style="light" translucent backgroundColor="transparent" />
+        <Navigation />
+      </View>
+    </SafeAreaProvider>
   );
 }
 

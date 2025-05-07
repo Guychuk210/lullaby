@@ -1,6 +1,18 @@
 {
   "compilerOptions": {
     "strict": true,
+    "jsx": "react-native",
+    "esModuleInterop": true,
+    "lib": ["es2018", "dom"],
+    "module": "esnext",
+    "moduleResolution": "node",
+    "target": "es2018",
+    "allowJs": true,
+    "allowSyntheticDefaultImports": true,
+    "noEmit": true,
+    "isolatedModules": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
     "paths": {
       "@firebase/auth": ["./node_modules/@firebase/auth/dist/index.rn.d.ts"],
       "@env": ["./src/types/env.d.ts"]

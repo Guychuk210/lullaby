@@ -70,12 +70,29 @@ function HomeScreen() {
       // Load and play the sound
       const { sound: newSound } = await Audio.Sound.createAsync(
         require('../../../assets/sounds/ringtone.mp3'),
-        { shouldPlay: true, isLooping: true }
+        { 
+          shouldPlay: true, 
+          isLooping: true,
+          volume: 1.0,
+          rate: 1.0,
+        }
       );
+
+      // Set up error handling for the sound
+      newSound.setOnPlaybackStatusUpdate((status) => {
+        if (!status.isLoaded) {
+          console.error('Playback error: Sound not loaded');
+          Alert.alert('Error', 'Failed to play ringtone: Sound not loaded');
+        }
+      });
+
       setSound(newSound);
     } catch (error) {
       console.error('Error playing ringtone:', error);
-      Alert.alert('Error', 'Failed to play ringtone');
+      Alert.alert(
+        'Error', 
+        'Failed to play ringtone. Please make sure the audio file exists and try again.'
+      );
     }
   };
 

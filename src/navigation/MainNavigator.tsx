@@ -4,6 +4,7 @@ import { MainTabParamList } from './types';
 import { colors } from '../constants/colors';
 import { Ionicons } from '@expo/vector-icons';
 import { Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import HomeScreen from '../screens/home/Home';
 import HistoryScreen from '../screens/history/History';
@@ -16,6 +17,8 @@ import ChatScreen from '../screens/chat/Chat';
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
 function MainNavigator() {
+  const insets = useSafeAreaInsets();
+  
   return (
     <Tab.Navigator
       screenOptions={{
@@ -26,15 +29,13 @@ function MainNavigator() {
           backgroundColor: colors.white,
           borderTopColor: colors.gray[200],
           paddingTop: 5,
-          height: Platform.OS === 'android' ? 60 : 80,
-          paddingBottom: Platform.OS === 'android' ? 10 : 5,
+          height: Platform.OS === 'android' ? 60 + insets.bottom : 80,
+          paddingBottom: Platform.OS === 'android' ? 10 + insets.bottom : 5 + insets.bottom,
           elevation: 8,
           shadowOpacity: 0.1,
           shadowRadius: 4,
           shadowColor: colors.black,
-          shadowOffset: { width: 0, height: -2 },
-          // Add safe area insets for Android
-          safeAreaInsets: { bottom: 0 },
+          shadowOffset: { width: 0, height: -2 }
         },
         tabBarLabelStyle: {
           fontSize: 12,
@@ -43,7 +44,6 @@ function MainNavigator() {
           paddingBottom: Platform.OS === 'android' ? 5 : 0,
         },
       }}
-      safeAreaInsets={{ bottom: 0 }}
     >
       <Tab.Screen 
         name="Home" 

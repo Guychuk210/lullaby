@@ -18,13 +18,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../constants/colors';
 import { theme } from '../../constants/theme';
-import { useVertexAIChat } from '../../hooks/useVertexAIChat';
+import { useChat } from '../../hooks/useChat';
 import { useNotifications } from '../../hooks/useNotifications';
 import { config } from '../../constants/config';
 import Header from '../../components/Header';
-import { Message } from '../../components/chat/ChatBox';
-import { testVertexAISetup } from '../../services/testVertexAI';
+import { Message, ConversationMessage, ContentItem } from '../../components/chat/ChatBox';
 import { useRoute } from '@react-navigation/native';
+// import { useAuth } from '../../hooks/useAuth'; // Uncomment if you have an auth hook
 
 // Sample notification data
 const notifications = [
@@ -55,13 +55,19 @@ function Chat() {
   console.log('[Chat] Component initializing');
   
   const route = useRoute();
-  const params = route.params as { showNotifications?: boolean } || {};
+  const params = route.params as { showNotifications?: boolean; userId?: string } || {};
   
   // Set initial state based on navigation params
   const [showNotifications, setShowNotifications] = useState(params.showNotifications || false);
   const scrollViewRef = useRef<ScrollView>(null);
-  const [initError, setInitError] = useState<Error | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  
+  // Get user ID for API requests
+  // If you have an auth hook, you can use it like:
+  // const { user } = useAuth();
+  // const userId = user?.uid || 'anonymous-user';
+  // For now, we'll use a param or a default value
+  const userId = params.userId || 'user-' + Date.now().toString();
   
   // Use the notifications hook to get and manage notifications
   const { 
@@ -82,15 +88,16 @@ function Chat() {
     timestamp: new Date(),
   };
   
-  // Use the hook directly within the component
+  // Use the chat hook directly within the component
   const {
     messages, 
     isLoading, 
     error, 
     sendMessage, 
     resetChat
-  } = useVertexAIChat({
+  } = useChat({
     initialMessages: [initialMessage],
+    userId: userId,
   });
 
   console.log('[Chat] Current message count:', messages.length);
@@ -126,6 +133,7 @@ function Chat() {
   const handleSendMessage = async (text: string) => {
     console.log('[Chat] Handling send message:', text);
     try {
+      // The sendMessage function in useChat now handles sending the entire conversation history
       await sendMessage(text);
       console.log('[Chat] Message sent successfully');
     } catch (e) {
@@ -174,6 +182,7 @@ function Chat() {
       return;
     }
     console.log('[Chat] Sending message from input:', inputText.trim());
+    console.log(`[Chat] Current conversation has ${messages.length} messages with userId: ${userId}`);
     handleSendMessage(inputText);
     setInputText('');
   };
@@ -199,18 +208,6 @@ function Chat() {
       }
       return newCount;
     });
-  };
-
-  const runVertexAITest = async () => {
-    console.log('[Chat] Running VertexAI test');
-    Alert.alert('Debug', 'Running VertexAI connection test. Check console for results.');
-    try {
-      await testVertexAISetup();
-      Alert.alert('Test Complete', 'VertexAI test completed. See console for details.');
-    } catch (err) {
-      console.error('[Chat] Test error:', err);
-      Alert.alert('Test Error', 'Test failed. See console for details.');
-    }
   };
 
   // Add keyboard state tracking
@@ -266,13 +263,6 @@ function Chat() {
             <View style={styles.debugModalContainer}>
               <View style={styles.debugModalContent}>
                 <Text style={styles.debugTitle}>Debug Menu</Text>
-                
-                <TouchableOpacity 
-                  style={styles.debugButton}
-                  onPress={runVertexAITest}
-                >
-                  <Text style={styles.debugButtonText}>Test VertexAI Connection</Text>
-                </TouchableOpacity>
                 
                 <TouchableOpacity 
                   style={[styles.debugButton, { backgroundColor: 'gray' }]}

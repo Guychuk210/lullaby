@@ -1,5 +1,5 @@
 import axios, { AxiosError } from 'axios';
-import { Message } from '../components/chat/ChatBox';
+import { Message, ConversationMessage, ContentItem } from '../components/chat/ChatBox';
 import { config } from '../constants/config';
 
 // Use the API URL from config
@@ -7,9 +7,15 @@ const API_URL = config.apiUrl;
 
 console.log(`Using API URL: ${API_URL}`);
 
-interface ChatSession {
-  sessionId: string;
-  messages: Message[];
+// Store the current user ID (in a real app, get this from auth)
+let currentUserId: string = 'user-' + Date.now().toString();
+
+// Convert legacy Message to new ConversationMessage format
+export function convertToConversationMessage(message: Message): ConversationMessage {
+  return {
+    role: message.sender === 'ai' ? 'assistant' : 'user',
+    content: [{ type: 'text', text: message.text }]
+  };
 }
 
 // Store the chat session ID
@@ -47,6 +53,58 @@ function formatErrorMessage(error: unknown): string {
   
   // Generic error
   return error instanceof Error ? error.message : 'An unknown error occurred';
+}
+
+/**
+ * Send the entire conversation to the AI server
+ * @param text The current message text
+ * @param history Full message history
+ * @param userId Optional user ID to use for the request
+ * @returns The AI response
+ */
+export async function sendConversation(
+  text: string,
+  history: Message[],
+  userId?: string
+): Promise<{ aiMessage: ContentItem[]; userId: string }> {
+  try {
+    // Convert all messages to the new format
+    const conversationHistory = history.map(convertToConversationMessage);
+    
+    // Add the current message to history
+    const currentMessage: ConversationMessage = {
+      role: 'user',
+      content: [{ type: 'text', text }]
+    };
+    
+    const messages = [...conversationHistory, currentMessage];
+    
+    console.log(`Sending conversation to ${API_URL}/ai/conversation with ${messages.length} messages`);
+    
+    // Use provided userId or fall back to the stored one
+    const userIdentifier = userId || currentUserId;
+    
+    const response = await axios.post(`${API_URL}/ai/conversation`, {
+      userId: userIdentifier,
+      messages,
+    });
+
+    console.log('Received response:', response.data);
+    
+    // Extract the AI message content from the response
+    if (!response.data || !response.data.message || !response.data.message.content) {
+      throw new Error('Invalid response format from server');
+    }
+
+    return {
+      aiMessage: response.data.message.content,
+      userId: response.data.userId || userIdentifier,
+    };
+  } catch (error) {
+    console.error('Error sending conversation:', error);
+    const errorMessage = formatErrorMessage(error);
+    throw new Error(errorMessage);
+  }
 }
 
 /**

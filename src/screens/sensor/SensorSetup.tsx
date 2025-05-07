@@ -119,7 +119,7 @@ function SensorSetup() {
               <Text style={styles.inputLabel}>Device Name</Text>
               <TextInput
                 style={styles.input}
-                placeholder="i.e. Johnny's sensor"
+                placeholder="i.e. Johnny's device"
                 value={deviceName}
                 onChangeText={setDeviceName}
               />

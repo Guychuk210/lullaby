@@ -15,11 +15,23 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../constants/colors';
 import { theme } from '../../constants/theme';
 
+// This is the current Message interface, we'll keep for backwards compatibility
 export interface Message {
   id: string;
   text: string;
   sender: 'user' | 'ai';
   timestamp: Date;
+}
+
+// This is the new message format as required by the API
+export interface ContentItem {
+  type: 'text';
+  text: string;
+}
+
+export interface ConversationMessage {
+  role: 'user' | 'assistant';
+  content: ContentItem[];
 }
 
 interface ChatBoxProps {

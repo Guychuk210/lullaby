@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { collection, doc, setDoc, getDocs, updateDoc, query, where, orderBy, getDoc } from 'firebase/firestore';
 import { db } from './firebase';
+import { config } from '../constants/config';
 
 /**
  * Interface for notification data received from the API
@@ -57,16 +58,15 @@ interface FetchNotificationsParams {
  */
 export async function fetchNotifications(params: FetchNotificationsParams): Promise<NotificationResponse> {
   try {
-    // Make API call to retrieve notifications
+    // Make API call to our server endpoint to retrieve notifications
     const response = await axios.get(
-      'https://ezlaylmye9.execute-api.us-east-1.amazonaws.com/PROD/retriveNotifications',
-      { params }
+      `${config.apiUrl}/notifications/users/${params.userId}/devices/${params.deviceId}`,
+      { params: { daysback: params.daysback } }
     );
     
     // Process the response to add client-side properties
-    const enhancedItems = response.data.items.map((item: Notification, index: number) => ({
+    const enhancedItems = response.data.items.map((item: Notification) => ({
       ...item,
-      id: `${item.userId}-${item.notificationTime}`, // Create a unique ID
       read: false, // Default all notifications to unread
     }));
     

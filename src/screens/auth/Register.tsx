@@ -35,17 +35,17 @@ function RegisterScreen() {
   const phoneInput = React.useRef<PhoneInput>(null);
 
   const handleRegister = async () => {
-    if (!name || !email || !phoneNumber || !password || !confirmPassword) {
+    if (!name || !email || !password || !confirmPassword) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
 
     // Validate phone number
-    const checkValid = phoneInput.current?.isValidNumber(phoneNumber);
-    if (!checkValid) {
-      Alert.alert('Error', 'Please enter a valid phone number');
-      return;
-    }
+    // const checkValid = phoneInput.current?.isValidNumber(phoneNumber);
+    // if (!checkValid) {
+    //   Alert.alert('Error', 'Please enter a valid phone number');
+    //   return;
+    // }
 
     if (password !== confirmPassword) {
       Alert.alert('Error', 'Passwords do not match');
@@ -107,7 +107,7 @@ function RegisterScreen() {
               />
             </View>
 
-            <View style={styles.inputContainer}>
+            {/* <View style={styles.inputContainer}>
               <Text style={styles.label}>Phone Number</Text>
               <PhoneInput
                 ref={phoneInput}
@@ -126,7 +126,7 @@ function RegisterScreen() {
                 containerStyle={styles.phoneInputContainer}
                 textContainerStyle={styles.phoneTextContainer}
               />
-            </View>
+            </View> */}
 
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Password</Text>

@@ -98,19 +98,12 @@ function ProfileScreen() {
           <Text style={styles.userEmail}>{user?.email || ''}</Text>
         </View>
 
+        {/*
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Settings</Text>
           
-          <View style={styles.settingItem}>
-            <Text style={styles.settingLabel}>Dark Mode</Text>
-            <Switch
-              value={darkModeEnabled}
-              onValueChange={setDarkModeEnabled}
-              trackColor={{ false: colors.gray[300], true: colors.primary }}
-              thumbColor={colors.white}
-            />
-          </View>
         </View>
+        */}
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Account</Text>

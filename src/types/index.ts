@@ -4,6 +4,7 @@ export interface User {
   email: string | null;
   displayName?: string;
   phoneNumber?: string;
+  deviceId?: string;
   hasActiveSubscription?: boolean;
   subscriptionStartDate?: string;
   subscriptionEndDate?: string;
@@ -51,6 +52,7 @@ export interface SensorDevice {
   id: string;
   name: string;
   userId?: string;
+  phoneNumber?: string;
   isConnected: boolean;
   batteryLevel: number;
   lastSyncTime: number | string | Date;

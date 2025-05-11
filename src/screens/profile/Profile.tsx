@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -8,7 +8,8 @@ import {
   ActivityIndicator,
   Alert,
   Switch,
-  Linking
+  Linking,
+  TextInput
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, CommonActions } from '@react-navigation/native';
@@ -19,6 +20,9 @@ import { theme } from '../../constants/theme';
 import { useAuth } from '../../hooks/useAuth';
 import { auth } from '../../services/firebase';
 import Header from '../../components/Header';
+import { getUserDevices, updateDevicePhoneNumber, updateDeviceId } from '../../services/sensor';
+import { Ionicons } from '@expo/vector-icons';
+import { SensorDevice } from '../../types';
 
 type ProfileScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -28,6 +32,126 @@ function ProfileScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [darkModeEnabled, setDarkModeEnabled] = useState(false);
+  
+  // Device state
+  const [deviceId, setDeviceId] = useState<string>('');
+  const [newDeviceId, setNewDeviceId] = useState<string>('');
+  const [phoneNumber, setPhoneNumber] = useState<string>('');
+  const [isUpdatingPhoneNumber, setIsUpdatingPhoneNumber] = useState(false);
+  const [isUpdatingDeviceId, setIsUpdatingDeviceId] = useState(false);
+  const [userDevices, setUserDevices] = useState<SensorDevice[]>([]);
+  const [selectedDevice, setSelectedDevice] = useState<SensorDevice | null>(null);
+  const [isLoadingDevices, setIsLoadingDevices] = useState(true);
+
+  // Load user devices
+  useEffect(() => {
+    async function fetchUserDevices() {
+      if (!user) return;
+      
+      setIsLoadingDevices(true);
+      try {
+        // Get user's devices from Firebase
+        const devices = await getUserDevices(user.id);
+        setUserDevices(devices);
+        
+        // Set the first device as selected if available
+        if (devices.length > 0) {
+          setSelectedDevice(devices[0]);
+          setDeviceId(devices[0].id); // This is the document name
+          setNewDeviceId(devices[0].id); // Initialize new device ID with current value
+          setPhoneNumber(devices[0].phoneNumber || '');
+        }
+      } catch (error) {
+        console.error('Error fetching user devices:', error);
+        Alert.alert('Error', 'Failed to load device information');
+      } finally {
+        setIsLoadingDevices(false);
+      }
+    }
+    
+    fetchUserDevices();
+  }, [user]);
+
+  // Update device ID in Firebase
+  const handleUpdateDeviceId = async () => {
+    if (!user || !deviceId || !newDeviceId) return;
+    
+    // Don't proceed if the IDs are the same
+    if (deviceId === newDeviceId) {
+      Alert.alert('No Change', 'The Device ID remains the same.');
+      return;
+    }
+    
+    // Confirm before updating
+    Alert.alert(
+      'Update Device ID',
+      `Are you sure you want to change the Device ID from ${deviceId} to ${newDeviceId}?`,
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Update',
+          onPress: async () => {
+            setIsUpdatingDeviceId(true);
+            try {
+              await updateDeviceId(user.id, deviceId, newDeviceId);
+              
+              // Update the local state
+              setDeviceId(newDeviceId);
+              
+              // Update the selected device and devices list
+              if (selectedDevice) {
+                const updatedDevice = { ...selectedDevice, id: newDeviceId };
+                setSelectedDevice(updatedDevice);
+                
+                const updatedDevices = userDevices.map(device => 
+                  device.id === deviceId ? updatedDevice : device
+                );
+                setUserDevices(updatedDevices);
+              }
+              
+              Alert.alert('Success', 'Device ID updated successfully');
+            } catch (error) {
+              console.error('Error updating device ID:', error);
+              Alert.alert('Error', 'Failed to update Device ID. Please try again.');
+            } finally {
+              setIsUpdatingDeviceId(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  // Update phone number in Firebase
+  const handleUpdatePhoneNumber = async () => {
+    if (!user || !deviceId) return;
+    
+    setIsUpdatingPhoneNumber(true);
+    try {
+      await updateDevicePhoneNumber(user.id, deviceId, phoneNumber);
+      Alert.alert('Success', 'Phone number updated successfully');
+      
+      // Update the local device information
+      if (selectedDevice) {
+        const updatedDevice = { ...selectedDevice, phoneNumber };
+        setSelectedDevice(updatedDevice);
+        
+        // Update the device in the userDevices array
+        const updatedDevices = userDevices.map(device => 
+          device.id === deviceId ? { ...device, phoneNumber } : device
+        );
+        setUserDevices(updatedDevices);
+      }
+    } catch (error) {
+      console.error('Error updating phone number:', error);
+      Alert.alert('Error', 'Failed to update phone number. Please try again.');
+    } finally {
+      setIsUpdatingPhoneNumber(false);
+    }
+  };
 
   const handleSignOut = () => {
     Alert.alert(
@@ -98,12 +222,71 @@ function ProfileScreen() {
           <Text style={styles.userEmail}>{user?.email || ''}</Text>
         </View>
 
-        {/*
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Settings</Text>
+          <Text style={styles.sectionTitle}>Device Information</Text>
           
+          {isLoadingDevices ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="small" color={colors.primary} />
+              <Text style={styles.loadingText}>Loading device information...</Text>
+            </View>
+          ) : userDevices.length === 0 ? (
+            <Text style={styles.noDeviceText}>No devices registered</Text>
+          ) : (
+            <>
+              {/* Device ID Field (Now editable) */}
+              <View style={styles.fieldContainer}>
+                <Text style={styles.fieldLabel}>Device ID</Text>
+                <View style={styles.inputContainer}>
+                  <TextInput
+                    style={styles.input}
+                    value={newDeviceId}
+                    onChangeText={setNewDeviceId}
+                    placeholder="Enter device ID"
+                    placeholderTextColor={colors.gray[400]}
+                  />
+                  <TouchableOpacity 
+                    style={styles.confirmButton}
+                    onPress={handleUpdateDeviceId}
+                    disabled={isUpdatingDeviceId}
+                  >
+                    {isUpdatingDeviceId ? (
+                      <ActivityIndicator size="small" color={colors.white} />
+                    ) : (
+                      <Ionicons name="checkmark" size={18} color={colors.white} />
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </View>
+              
+              {/* Phone Number Field */}
+              <View style={styles.fieldContainer}>
+                <Text style={styles.fieldLabel}>Device Phone Number</Text>
+                <View style={styles.inputContainer}>
+                  <TextInput
+                    style={styles.input}
+                    value={phoneNumber}
+                    onChangeText={setPhoneNumber}
+                    placeholder="Enter phone number"
+                    placeholderTextColor={colors.gray[400]}
+                    keyboardType="phone-pad"
+                  />
+                  <TouchableOpacity 
+                    style={styles.confirmButton}
+                    onPress={handleUpdatePhoneNumber}
+                    disabled={isUpdatingPhoneNumber}
+                  >
+                    {isUpdatingPhoneNumber ? (
+                      <ActivityIndicator size="small" color={colors.white} />
+                    ) : (
+                      <Ionicons name="checkmark" size={18} color={colors.white} />
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </>
+          )}
         </View>
-        */}
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Account</Text>
@@ -157,6 +340,57 @@ function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
+  // New styles
+  loadingContainer: {
+    alignItems: 'center',
+    padding: theme.spacing.m,
+  },
+  loadingText: {
+    marginTop: theme.spacing.s,
+    color: colors.gray[600],
+    fontSize: theme.typography.fontSize.s,
+  },
+  noDeviceText: {
+    textAlign: 'center',
+    padding: theme.spacing.m,
+    color: colors.gray[600],
+    fontSize: theme.typography.fontSize.m,
+  },
+  readOnlyInput: {
+    backgroundColor: colors.gray[200],
+    color: colors.gray[700],
+  },
+  // Existing and updated styles
+  fieldContainer: {
+    marginBottom: theme.spacing.m,
+  },
+  fieldLabel: {
+    fontSize: theme.typography.fontSize.s,
+    color: colors.gray[600],
+    marginBottom: theme.spacing.xs,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  input: {
+    flex: 1,
+    height: 46,
+    backgroundColor: colors.gray[100],
+    borderRadius: theme.borderRadius.s,
+    paddingHorizontal: theme.spacing.m,
+    color: colors.text,
+    fontSize: theme.typography.fontSize.m,
+    marginRight: theme.spacing.xs,
+  },
+  confirmButton: {
+    width: 40,
+    height: 40,
+    backgroundColor: colors.primary,
+    borderRadius: theme.borderRadius.s,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   container: {
     flex: 1,
     backgroundColor: colors.background,

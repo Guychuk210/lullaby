@@ -9,7 +9,9 @@ import {
   updateDoc,
   serverTimestamp,
   onSnapshot,
-  setDoc
+  setDoc,
+  deleteDoc,
+  getDoc
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { SensorData, SensorDevice } from '../types';
@@ -266,4 +268,60 @@ export const subscribeSensorData = (deviceId: string, callback: (data: SensorDat
     
     callback(dataHistory);
   });
+};
+
+// Update device phone number
+export const updateDevicePhoneNumber = async (userId: string, deviceId: string, phoneNumber: string): Promise<void> => {
+  try {
+    if (!userId) {
+      throw new Error('User ID is required to update device phone number');
+    }
+
+    // Update device in the user's devices subcollection
+    const deviceRef = doc(db, 'users', userId, 'devices', deviceId);
+    await updateDoc(deviceRef, {
+      phoneNumber: phoneNumber,
+    });
+    
+    console.log('Device phone number updated successfully');
+  } catch (error) {
+    console.error('Error updating device phone number:', error);
+    throw error;
+  }
+};
+
+// Update device ID (document ID) by creating a new document and deleting the old one
+export const updateDeviceId = async (userId: string, oldDeviceId: string, newDeviceId: string): Promise<void> => {
+  try {
+    if (!userId) {
+      throw new Error('User ID is required to update device ID');
+    }
+
+    // Get the old device document
+    const oldDeviceRef = doc(db, 'users', userId, 'devices', oldDeviceId);
+    const oldDeviceDoc = await getDoc(oldDeviceRef);
+    
+    if (!oldDeviceDoc.exists()) {
+      throw new Error('Device not found');
+    }
+    
+    // Get all data from the old device
+    const deviceData = oldDeviceDoc.data();
+    
+    // Create a new device document with the new ID
+    const newDeviceRef = doc(db, 'users', userId, 'devices', newDeviceId);
+    await setDoc(newDeviceRef, {
+      ...deviceData,
+      // Update any fields that should reflect the ID change
+      lastSyncTime: new Date(),
+    });
+    
+    // Delete the old device document
+    await deleteDoc(oldDeviceRef);
+    
+    console.log('Device ID updated successfully from', oldDeviceId, 'to', newDeviceId);
+  } catch (error) {
+    console.error('Error updating device ID:', error);
+    throw error;
+  }
 };

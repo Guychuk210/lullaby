@@ -95,3 +95,22 @@ export const getCurrentUserData = async (userId: string): Promise<User | null> =
 export const subscribeToAuthChanges = (callback: (user: FirebaseUser | null) => void) => {
   return onAuthStateChanged(auth, callback);
 };
+
+// Update user profile data
+export const updateUserProfile = async (
+  userId: string,
+  data: { deviceId?: string; phoneNumber?: string }
+): Promise<void> => {
+  try {
+    // Get reference to the user document
+    const userDocRef = doc(db, 'users', userId);
+    
+    // Update only the provided fields
+    await setDoc(userDocRef, data, { merge: true });
+    
+    console.log('User profile updated successfully');
+  } catch (error) {
+    console.error('Error updating user profile:', error);
+    throw error;
+  }
+};

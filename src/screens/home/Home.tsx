@@ -78,15 +78,21 @@ function HomeScreen() {
         }
       );
 
-      // Set up error handling for the sound
+      // Set up error handling for the sound - only log errors when the sound is active
+      let isActive = true;
       newSound.setOnPlaybackStatusUpdate((status) => {
-        if (!status.isLoaded) {
+        if (isActive && !status.isLoaded) {
           console.error('Playback error: Sound not loaded');
           Alert.alert('Error', 'Failed to play ringtone: Sound not loaded');
         }
       });
 
       setSound(newSound);
+      
+      // Add cleanup function
+      return () => {
+        isActive = false;
+      };
     } catch (error) {
       console.error('Error playing ringtone:', error);
       Alert.alert(
@@ -100,6 +106,9 @@ function HomeScreen() {
   const stopRingtone = async () => {
     try {
       if (sound) {
+        // Remove the status update listener by setting a new empty one
+        sound.setOnPlaybackStatusUpdate(null);
+        
         await sound.stopAsync();
         await sound.unloadAsync();
         setSound(null);

@@ -14,6 +14,7 @@ interface DayInfoBase {
   day: number;
   isCurrentMonth: boolean;
   isEvent?: boolean;
+  isToday?: boolean;
 }
 
 interface PrevMonthDay extends DayInfoBase {
@@ -26,6 +27,7 @@ interface NextMonthDay extends DayInfoBase {
 
 interface CurrentMonthDay extends DayInfoBase {
   isEvent: boolean;
+  isToday: boolean;
 }
 
 type DayInfo = PrevMonthDay | CurrentMonthDay | NextMonthDay;
@@ -33,6 +35,7 @@ type DayInfo = PrevMonthDay | CurrentMonthDay | NextMonthDay;
 function EventCalendar({ events, onDayPress }: EventCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [eventDays, setEventDays] = useState<number[]>([]);
+  const today = new Date();
   
   // Process events to find days with events
   useEffect(() => {
@@ -88,6 +91,11 @@ function EventCalendar({ events, onDayPress }: EventCalendarProps) {
     // Get the last day of the previous month
     const prevMonthLastDay = new Date(year, month, 0).getDate();
     
+    // Check if today is in the current month
+    const isCurrentMonthToday = today.getMonth() === month && 
+                               today.getFullYear() === year;
+    const todayDate = today.getDate();
+    
     // Days from previous month to display
     const prevMonthDays: PrevMonthDay[] = Array.from({ length: firstDayOfWeek }, (_, i) => ({
       day: prevMonthLastDay - firstDayOfWeek + i + 1,
@@ -100,6 +108,7 @@ function EventCalendar({ events, onDayPress }: EventCalendarProps) {
       day: i + 1,
       isCurrentMonth: true,
       isEvent: eventDays.includes(i + 1),
+      isToday: isCurrentMonthToday && (i + 1) === todayDate,
     }));
     
     // Calculate how many days from next month we need to display
@@ -177,6 +186,7 @@ function EventCalendar({ events, onDayPress }: EventCalendarProps) {
                 {dayInfo.day}
               </Text>
               {dayInfo.isEvent && <View style={styles.eventDot} />}
+              {dayInfo.isToday && <View style={styles.todayCircle} />}
             </TouchableOpacity>
           ))}
         </View>
@@ -269,12 +279,26 @@ const styles = StyleSheet.create({
   },
   eventDot: {
     position: 'absolute',
-    bottom: -3,
-    width: 24,
-    height: 24,
+    bottom: -2,
+    width: 21,
+    height: 21,
     borderRadius: 16,
     backgroundColor: colors.primary,
     opacity: 0.5,
+    zIndex: 1,
+  },
+  todayCircle: {
+    position: 'absolute',
+    width: 34,
+    height: 34,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    top: '42%',
+    left: '43%',
+    transform: [{ translateX: -14 }, { translateY: -14 }],
     zIndex: 1,
   },
   legendContainer: {
@@ -289,4 +313,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default EventCalendar; 
+export default EventCalendar;

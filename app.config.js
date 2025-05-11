@@ -2,7 +2,7 @@ import 'dotenv/config';
 
 module.exports = {
   expo: {
-    name: 'Lullaby',
+    name: 'Numah.AI',
     slug: 'lullaby',
     version: '1.0.0',
     orientation: 'portrait',

@@ -144,9 +144,9 @@ export function useNotifications(): NotificationHook {
     }
   }, [user, deviceId]);
 
-  // Set up polling for new notifications (every 60 seconds)
+  // Set up polling for new notifications (every 10 minutes)
   useEffect(() => {
-    const pollInterval = 60 * 1000; // 60 seconds
+    const pollInterval = 600 * 1000; // 10 minutes
     let intervalId: number;
 
     if (user && deviceId) {

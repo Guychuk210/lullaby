@@ -92,11 +92,18 @@ export async function fetchNotifications(params: FetchNotificationsParams): Prom
  */
 async function storeNotificationsInFirebase(userId: string, notifications: Notification[]): Promise<void> {
   try {
-    console.log(`[NotificationService] Storing ${notifications.length} notifications in Firebase for user ${userId}`);
+    console.log(`[NotificationService] Storing notifications in Firebase for user ${userId}`);
+    
+    // Filter notifications to only include those matching the user's ID
+    const userNotifications = notifications.filter(notification => 
+      notification.userId === userId && notification.deviceId
+    );
+    
+    console.log(`[NotificationService] Found ${userNotifications.length} notifications matching userId ${userId}`);
     
     const batch: Promise<void>[] = [];
     
-    for (const notification of notifications) {
+    for (const notification of userNotifications) {
       const notificationId = notification.id || `${notification.userId}-${notification.notificationTime}`;
       const notificationRef = doc(db, 'users', userId, 'notifications', notificationId);
       

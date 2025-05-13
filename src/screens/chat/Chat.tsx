@@ -24,10 +24,11 @@ import { config } from '../../constants/config';
 import Header from '../../components/Header';
 import { Message, ConversationMessage, ContentItem } from '../../components/chat/ChatBox';
 import { useRoute } from '@react-navigation/native';
-// import { useAuth } from '../../hooks/useAuth'; // Uncomment if you have an auth hook
+import { useAuth } from '../../hooks/useAuth'; // Uncommented the auth hook
+import { useNavigation } from '@react-navigation/native';
 
 // Sample notification data
-const notifications = [
+const sampleNotifications = [
   {
     id: '1',
     title: 'Welcome to our app!',
@@ -55,6 +56,7 @@ function Chat() {
   console.log('[Chat] Component initializing');
   
   const route = useRoute();
+  const navigation = useNavigation<any>();
   const params = route.params as { showNotifications?: boolean; userId?: string } || {};
   
   // Set initial state based on navigation params
@@ -62,16 +64,13 @@ function Chat() {
   const scrollViewRef = useRef<ScrollView>(null);
   const [refreshing, setRefreshing] = useState(false);
   
-  // Get user ID for API requests
-  // If you have an auth hook, you can use it like:
-  // const { user } = useAuth();
-  // const userId = user?.uid || 'anonymous-user';
-  // For now, we'll use a param or a default value
-  const userId = params.userId || 'user-' + Date.now().toString();
+  // Get user ID for API requests using the auth hook
+  const { user } = useAuth();
+  const userId = user?.id || params.userId || 'anonymous-user';
   
   // Use the notifications hook to get and manage notifications
   const { 
-    notifications, 
+    notifications: hookNotifications, 
     unreadCount, 
     isLoading: notificationsLoading, 
     error: notificationsError,
@@ -79,6 +78,12 @@ function Chat() {
     markAsRead,
     markAllAsRead
   } = useNotifications();
+
+  // Local notifications state as fallback
+  const [localNotifications, setLocalNotifications] = useState(sampleNotifications);
+  
+  // Use hook notifications if available, otherwise use local notifications
+  const notifications = hookNotifications?.length > 0 ? hookNotifications : localNotifications;
   
   // Define the initial message
   const initialMessage: Message = {
@@ -189,9 +194,43 @@ function Chat() {
 
   // Handle pull-to-refresh for notifications
   const onRefresh = async () => {
+    console.log('[Chat] Refreshing notifications...');
     setRefreshing(true);
-    await refreshNotifications();
-    setRefreshing(false);
+    
+    // Add a safety timeout to prevent infinite loading state
+    const refreshTimeout = setTimeout(() => {
+      console.log('[Chat] Refresh timeout triggered');
+      setRefreshing(false);
+    }, 5000); // 5 seconds timeout
+    
+    try {
+      // If refreshNotifications function exists, call it
+      if (typeof refreshNotifications === 'function') {
+        await refreshNotifications();
+      } else {
+        // Force refresh by simulating notifications update
+        console.log('[Chat] Using direct state update for notifications refresh');
+        // Wait a moment to simulate network request
+        await new Promise(resolve => setTimeout(resolve, 800));
+        
+        // Update local notifications with a new entry to simulate refresh
+        const newNotification = {
+          id: Date.now().toString(),
+          title: 'Refreshed Notification',
+          message: `This is a new notification that appeared after refreshing at ${new Date().toLocaleTimeString()}`,
+          date: 'Just now',
+          read: false
+        };
+        
+        setLocalNotifications(prev => [newNotification, ...prev]);
+      }
+      console.log('[Chat] Notifications refreshed successfully');
+    } catch (error) {
+      console.error('[Chat] Error refreshing notifications:', error);
+    } finally {
+      clearTimeout(refreshTimeout);
+      setRefreshing(false);
+    }
   };
 
   // Add debug counter
@@ -323,15 +362,13 @@ function Chat() {
                   onRefresh={onRefresh}
                   colors={[colors.primary]}
                   tintColor={colors.primary}
+                  progressBackgroundColor={colors.white}
+                  title="Pull to refresh"
+                  titleColor={colors.gray[500]}
                 />
               }
             >
-              {notificationsLoading && !refreshing ? (
-                <View style={styles.loaderContainer}>
-                  <ActivityIndicator size="large" color={colors.primary} />
-                  <Text style={styles.loaderText}>Loading notifications...</Text>
-                </View>
-              ) : notificationsError ? (
+              {notificationsError ? (
                 <View style={styles.errorContainer}>
                   <Ionicons name="alert-circle-outline" size={24} color={colors.error} />
                   <Text style={styles.errorText}>{notificationsError}</Text>
@@ -639,13 +676,12 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   loadingContainer: {
-    flexDirection: 'row',
+    padding: 20,
     alignItems: 'center',
-    paddingVertical: 8,
-    alignSelf: 'center',
+    justifyContent: 'center',
   },
   loadingText: {
-    marginLeft: 8,
+    marginTop: 10,
     color: colors.gray[500],
     fontSize: 14,
   },

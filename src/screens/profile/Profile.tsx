@@ -9,7 +9,8 @@ import {
   Alert,
   Switch,
   Linking,
-  TextInput
+  TextInput,
+  Modal
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, CommonActions } from '@react-navigation/native';
@@ -42,6 +43,15 @@ function ProfileScreen() {
   const [userDevices, setUserDevices] = useState<SensorDevice[]>([]);
   const [selectedDevice, setSelectedDevice] = useState<SensorDevice | null>(null);
   const [isLoadingDevices, setIsLoadingDevices] = useState(true);
+
+  // Modal state
+  const [policyModalVisible, setPolicyModalVisible] = useState(false);
+  const [termsModalVisible, setTermsModalVisible] = useState(false);
+
+  // Sample text for policies
+  const privacyPolicyText = "This is a sample privacy policy text. Replace this with your actual privacy policy content. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam auctor, nisl nec ultricies lacinia, nisl nisl aliquet nisl, nec aliquet nisl nisl nec aliquet nisl. Nullam auctor, nisl nec ultricies lacinia, nisl nisl aliquet nisl, nec aliquet nisl nisl nec aliquet nisl. Nullam auctor, nisl nec ultricies lacinia, nisl nisl aliquet nisl, nec aliquet nisl nisl nec aliquet nisl. Nullam auctor, nisl nec ultricies lacinia, nisl nisl aliquet nisl, nec aliquet nisl nisl nec aliquet nisl. Nullam auctor, nisl nec ultricies lacinia, nisl nisl aliquet nisl, nec aliquet nisl nisl nec aliquet nisl. This is a sample privacy policy text. Replace this with your actual privacy policy content. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam auctor, nisl nec ultricies lacinia, nisl nisl aliquet nisl, nec aliquet nisl nisl nec aliquet nisl. Nullam auctor, nisl nec ultricies lacinia, nisl nisl aliquet nisl, nec aliquet nisl nisl nec aliquet nisl. Nullam auctor, nisl nec ultricies lacinia, nisl nisl aliquet nisl, nec aliquet nisl nisl nec aliquet nisl. Nullam auctor, nisl nec ultricies lacinia, nisl nisl aliquet nisl, nec aliquet nisl nisl nec aliquet nisl. Nullam auctor, nisl nec ultricies lacinia, nisl nisl aliquet nisl, nec aliquet nisl nisl nec aliquet nisl. This is a sample privacy policy text. Replace this with your actual privacy policy content. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam auctor, nisl nec ultricies lacinia, nisl nisl aliquet nisl, nec aliquet nisl nisl nec aliquet nisl. Nullam auctor, nisl nec ultricies lacinia, nisl nisl aliquet nisl, nec aliquet nisl nisl nec aliquet nisl. Nullam auctor, nisl nec ultricies lacinia, nisl nisl aliquet nisl, nec aliquet nisl nisl nec aliquet nisl. Nullam auctor, nisl nec ultricies lacinia, nisl nisl aliquet nisl, nec aliquet nisl nisl nec aliquet nisl. Nullam auctor, nisl nec ultricies lacinia, nisl nisl aliquet nisl, nec aliquet nisl nisl nec aliquet nisl. This is a sample privacy policy text. Replace this with your actual privacy policy content. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam auctor, nisl nec ultricies lacinia, nisl nisl aliquet nisl, nec aliquet nisl nisl nec aliquet nisl. Nullam auctor, nisl nec ultricies lacinia, nisl nisl aliquet nisl, nec aliquet nisl nisl nec aliquet nisl. Nullam auctor, nisl nec ultricies lacinia, nisl nisl aliquet nisl, nec aliquet nisl nisl nec aliquet nisl. Nullam auctor, nisl nec ultricies lacinia, nisl nisl aliquet nisl, nec aliquet nisl nisl nec aliquet nisl. Nullam auctor, nisl nec ultricies lacinia, nisl nisl aliquet nisl, nec aliquet nisl nisl nec aliquet nisl.";
+  
+  const termsOfServiceText = "This is a sample terms of service text. Replace this with your actual terms of service content. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam auctor, nisl nec ultricies lacinia, nisl nisl aliquet nisl, nec aliquet nisl nisl nec aliquet nisl. Nullam auctor, nisl nec ultricies lacinia, nisl nisl aliquet nisl, nec aliquet nisl nisl nec aliquet nisl. Nullam auctor, nisl nec ultricies lacinia, nisl nisl aliquet nisl, nec aliquet nisl nisl nec aliquet nisl. Nullam auctor, nisl nec ultricies lacinia, nisl nisl aliquet nisl, nec aliquet nisl nisl nec aliquet nisl. Nullam auctor, nisl nec ultricies lacinia, nisl nisl aliquet nisl, nec aliquet nisl nisl nec aliquet nisl. This is a sample privacy policy text. Replace this with your actual privacy policy content. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam auctor, nisl nec ultricies lacinia, nisl nisl aliquet nisl, nec aliquet nisl nisl nec aliquet nisl. Nullam auctor, nisl nec ultricies lacinia, nisl nisl aliquet nisl, nec aliquet nisl nisl nec aliquet nisl. Nullam auctor, nisl nec ultricies lacinia, nisl nisl aliquet nisl, nec aliquet nisl nisl nec aliquet nisl. Nullam auctor, nisl nec ultricies lacinia, nisl nisl aliquet nisl, nec aliquet nisl nisl nec aliquet nisl. Nullam auctor, nisl nec ultricies lacinia, nisl nisl aliquet nisl, nec aliquet nisl nisl nec aliquet nisl.";
 
   // Load user devices
   useEffect(() => {
@@ -291,11 +301,17 @@ function ProfileScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Account</Text>
           
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity 
+            style={styles.menuItem} 
+            onPress={() => setPolicyModalVisible(true)}
+          >
             <Text style={styles.menuItemText}>Privacy Policy</Text>
           </TouchableOpacity>
           
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity 
+            style={styles.menuItem}
+            onPress={() => setTermsModalVisible(true)}
+          >
             <Text style={styles.menuItemText}>Terms of Service</Text>
           </TouchableOpacity>
           
@@ -335,6 +351,56 @@ function ProfileScreen() {
 
         <Text style={styles.versionText}>Version 1.0.0</Text>
       </ScrollView>
+
+      {/* Privacy Policy Modal */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={policyModalVisible}
+        onRequestClose={() => setPolicyModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Privacy Policy</Text>
+              <TouchableOpacity 
+                onPress={() => setPolicyModalVisible(false)}
+                style={styles.closeButton}
+              >
+                <Ionicons name="close" size={24} color={colors.text} />
+              </TouchableOpacity>
+            </View>
+            <ScrollView style={styles.modalBody}>
+              <Text style={styles.modalText}>{privacyPolicyText}</Text>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Terms of Service Modal */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={termsModalVisible}
+        onRequestClose={() => setTermsModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Terms of Service</Text>
+              <TouchableOpacity 
+                onPress={() => setTermsModalVisible(false)}
+                style={styles.closeButton}
+              >
+                <Ionicons name="close" size={24} color={colors.text} />
+              </TouchableOpacity>
+            </View>
+            <ScrollView style={styles.modalBody}>
+              <Text style={styles.modalText}>{termsOfServiceText}</Text>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -504,6 +570,46 @@ const styles = StyleSheet.create({
     fontSize: theme.typography.fontSize.xs,
     color: colors.gray[500],
     marginBottom: theme.spacing.l,
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    padding: theme.spacing.m,
+  },
+  modalContent: {
+    width: '100%',
+    maxHeight: '80%',
+    backgroundColor: colors.white,
+    borderRadius: theme.borderRadius.m,
+    overflow: 'hidden',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: theme.spacing.m,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.gray[200],
+  },
+  modalTitle: {
+    fontSize: theme.typography.fontSize.l,
+    fontWeight: 'bold',
+    color: colors.text,
+  },
+  closeButton: {
+    padding: theme.spacing.xs,
+  },
+  modalBody: {
+    paddingHorizontal: theme.spacing.m,
+  },
+  modalText: {
+    fontSize: theme.typography.fontSize.m,
+    lineHeight: 24,
+    color: colors.text,
+    paddingVertical: theme.spacing.m,
   },
 });
 

@@ -22,6 +22,7 @@ import { colors } from '../../constants/colors';
 import { theme } from '../../constants/theme';
 import PhoneInput from 'react-native-phone-number-input';
 import Checkbox from 'expo-checkbox';
+import { PrivacyPolicy, TermsOfService } from '../profile/PolicyTexts';
 
 // Navigation type for auth stack screens
 type RegisterScreenNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'Register'>;
@@ -87,76 +88,54 @@ function RegisterScreen() {
   // Function to render the Privacy Policy modal
   const renderPrivacyPolicyModal = () => (
     <Modal
-      animationType="none"
+      animationType="slide"
       transparent={true}
       visible={privacyModalVisible}
       onRequestClose={() => setPrivacyModalVisible(false)}
     >
-      <Pressable 
-        style={styles.modalBackdrop}
-        onPress={() => setPrivacyModalVisible(false)}
-      >
+      <View style={styles.modalBackdrop}>
         <View style={styles.modalContainer}>
-          <Pressable style={styles.modalContent}>
+          <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Privacy Policy</Text>
-            <ScrollView style={styles.modalScrollView}>
-              <Text style={styles.modalText}>
-                This is a sample Privacy Policy. Replace this text with your actual privacy policy content.
-                
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla quam velit, vulputate eu pharetra nec, mattis ac neque. Duis vulputate commodo lectus, ac blandit elit tincidunt id.
-                
-                We collect certain information about your device, including information about your web browser, IP address, time zone, and some of the cookies that are installed on your device.
-                
-                This Privacy Policy describes our policies and procedures on the collection, use and disclosure of your information when you use the Service and tells you about your privacy rights and how the law protects you.
-              </Text>
-            </ScrollView>
+            <View style={styles.modalScrollView}>
+              <PrivacyPolicy />
+            </View>
             <TouchableOpacity 
               style={styles.modalButton} 
               onPress={() => setPrivacyModalVisible(false)}
             >
               <Text style={styles.modalButtonText}>Close</Text>
             </TouchableOpacity>
-          </Pressable>
+          </View>
         </View>
-      </Pressable>
+      </View>
     </Modal>
   );
 
   // Function to render the Terms of Use modal
   const renderTermsOfUseModal = () => (
     <Modal
-      animationType="none"
+      animationType="slide"
       transparent={true}
       visible={termsModalVisible}
       onRequestClose={() => setTermsModalVisible(false)}
     >
-      <Pressable 
-        style={styles.modalBackdrop}
-        onPress={() => setTermsModalVisible(false)}
-      >
+      <View style={styles.modalBackdrop}>
         <View style={styles.modalContainer}>
-          <Pressable style={styles.modalContent}>
+          <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Terms of Use</Text>
-            <ScrollView style={styles.modalScrollView}>
-              <Text style={styles.modalText}>
-                This is a sample Terms of Use. Replace this text with your actual terms of use content.
-                
-                By accessing or using the Service, you agree to be bound by these Terms. If you disagree with any part of the terms, then you may not access the Service.
-                
-                Your access to and use of the Service is conditioned on your acceptance of and compliance with these Terms. These Terms apply to all visitors, users, and others who access or use the Service.
-                
-                We reserve the right, at our sole discretion, to modify or replace these Terms at any time. If a revision is material we will try to provide at least 30 days' notice prior to any new terms taking effect.
-              </Text>
-            </ScrollView>
+            <View style={styles.modalScrollView}>
+              <TermsOfService />
+            </View>
             <TouchableOpacity 
               style={styles.modalButton} 
               onPress={() => setTermsModalVisible(false)}
             >
               <Text style={styles.modalButtonText}>Close</Text>
             </TouchableOpacity>
-          </Pressable>
+          </View>
         </View>
-      </Pressable>
+      </View>
     </Modal>
   );
 
@@ -414,23 +393,27 @@ const styles = StyleSheet.create({
     fontSize: theme.typography.fontSize.s,
     fontWeight: '600',
   },
-  // Modal styles
+  // Updated modal styles
   modalBackdrop: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  modalContainer: {
-    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: theme.spacing.m,
+  },
+  modalContainer: {
+    width: '95%',
+    height: '90%',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   modalContent: {
     backgroundColor: colors.white,
     borderRadius: theme.borderRadius.m,
-    padding: theme.spacing.l,
-    width: '90%',
-    maxHeight: '80%',
+    paddingHorizontal: theme.spacing.m,
+    paddingTop: theme.spacing.l,
+    paddingBottom: theme.spacing.m,
+    width: '100%',
+    height: '100%',
     // Shadow for iOS
     shadowColor: '#000',
     shadowOffset: {
@@ -441,6 +424,7 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
     // Shadow for Android
     elevation: 5,
+    flexDirection: 'column',
   },
   modalTitle: {
     fontSize: theme.typography.fontSize.xl,
@@ -450,12 +434,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   modalScrollView: {
-    marginBottom: theme.spacing.m,
-  },
-  modalText: {
-    fontSize: theme.typography.fontSize.m,
-    lineHeight: theme.typography.lineHeight.m,
-    color: colors.text,
+    flex: 1,
     marginBottom: theme.spacing.m,
   },
   modalButton: {
@@ -463,6 +442,7 @@ const styles = StyleSheet.create({
     borderRadius: theme.borderRadius.m,
     padding: theme.spacing.m,
     alignItems: 'center',
+    marginTop: theme.spacing.s,
   },
   modalButtonText: {
     color: colors.white,

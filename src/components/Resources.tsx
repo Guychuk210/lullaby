@@ -11,8 +11,8 @@ interface ResourcesProps {
 }
 
 function Resources({ 
-  onFaqPress = () => Linking.openURL('https://lullabyai.net/faq'), 
-  onWebsitePress = () => Linking.openURL('https://lullabyai.net/') 
+  onFaqPress = () => Linking.openURL('https://numah.ai/faq'), 
+  onWebsitePress = () => Linking.openURL('https://numah.ai/') 
 }: ResourcesProps) {
   return (
     <View style={styles.resourcesContainer}>

@@ -14,12 +14,12 @@ import {
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: FIREBASE_API_KEY,
-  authDomain: FIREBASE_AUTH_DOMAIN,
-  projectId: FIREBASE_PROJECT_ID,
-  storageBucket: FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: FIREBASE_MESSAGING_SENDER_ID,
-  appId: FIREBASE_APP_ID,
+  apiKey: "AIzaSyAGQyntNngySchZrkxb4xpi5VsOq0JGkxM",
+  authDomain: "lullaby-smart.firebaseapp.com",
+  projectId: "lullaby-smart",
+  storageBucket: "lullaby-smart.firebasestorage.app",
+  messagingSenderId: "723095304506",
+  appId: "1:723095304506:web:e7422643202d9ae575b803",
 };
 
 // Initialize Firebase

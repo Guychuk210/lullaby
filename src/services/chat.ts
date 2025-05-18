@@ -43,7 +43,7 @@ function formatErrorMessage(error: unknown): string {
       } else if (status >= 500) {
         return 'Server error. Please try again later.';
       } else {
-        return axiosError.response.data?.error || 'An error occurred with the request.';
+        return (axiosError.response.data as { error?: string })?.error || 'An error occurred with the request.';
       }
     } else if (axiosError.request) {
       // Request made but no response

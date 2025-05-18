@@ -209,11 +209,10 @@ function HomeScreen() {
       
       // Prepare event data for the sensor controller
       const eventData = {
-        isWet: true,
-        intensity: 'medium',
+        status: "WET",
+        timestamp: Date.now(),
         batteryLevel: 85,
         signalStrength: 70,
-        timestamp: Date.now()
       };
       
       console.log(`Sending test event to server for device ${deviceId}...`);
@@ -221,8 +220,10 @@ function HomeScreen() {
       try {
         // Call the server's reportEvent endpoint
         // Route is defined in sensor.routes.ts as /:id/events
+        const url = `${serverUrl}/${deviceId}/events`;
+        console.log('Sending test event to server at URL:', url);
         const response = await axios.post(
-          `${serverUrl}/${deviceId}/events`, 
+          url, 
           eventData
         );
         

@@ -353,7 +353,17 @@ function Chat() {
         {showNotifications ? (
           <>
             {/* Notifications View */}
-            <Text style={styles.screenTitle}>Notifications</Text>
+            <View style={styles.notificationsHeader}>
+              <Text style={styles.screenTitle}>Notifications</Text>
+              {notifications.length > 0 && unreadCount > 0 && (
+                <TouchableOpacity 
+                  style={styles.markAllReadButton}
+                  onPress={markAllAsRead}
+                >
+                  <Text style={styles.markAllReadButtonText}>Mark All as Read</Text>
+                </TouchableOpacity>
+              )}
+            </View>
             <ScrollView 
               style={styles.contentContainer}
               refreshControl={
@@ -604,9 +614,9 @@ const styles = StyleSheet.create({
   screenTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    marginVertical: 16,
-    paddingHorizontal: 16,
     color: colors.text,
+    marginVertical: 0,
+    paddingHorizontal: 0,
   },
   chatContainer: {
     flex: 1,
@@ -834,6 +844,27 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 0,
     top: 0,
+  },
+  notificationsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    marginBottom: 16,
+    marginTop: 8,
+  },
+  markAllReadButton: {
+    backgroundColor: colors.white,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.primary,
+  },
+  markAllReadButtonText: {
+    color: colors.primary,
+    fontSize: 12,
+    fontWeight: 'bold',
   },
 });
 

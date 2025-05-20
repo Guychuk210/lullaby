@@ -26,6 +26,8 @@ import { getUserDevices, updateDevicePhoneNumber, updateDeviceId } from '../../s
 import { Ionicons } from '@expo/vector-icons';
 import { SensorDevice } from '../../types';
 import { PrivacyPolicy, TermsOfService } from './PolicyTexts';
+import firebase from 'firebase/app';
+import 'firebase/auth';
 
 type ProfileScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -49,6 +51,9 @@ function ProfileScreen() {
   // Modal state
   const [policyModalVisible, setPolicyModalVisible] = useState(false);
   const [termsModalVisible, setTermsModalVisible] = useState(false);
+
+  // Delete account state
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   // Load user devices
   useEffect(() => {
@@ -212,6 +217,64 @@ function ProfileScreen() {
     );
   };
 
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Delete Account',
+      'Are you sure you want to permanently delete your account? This action cannot be undone.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            setIsDeletingAccount(true);
+            
+            try {
+              // Get the current user
+              const currentUser = auth.currentUser;
+              
+              if (!currentUser) {
+                throw new Error('No user is currently signed in');
+              }
+              
+              // Delete the user account
+              await currentUser.delete();
+              
+              console.log('User account deleted successfully');
+              
+              // Navigate to Auth screen
+              navigation.dispatch(
+                CommonActions.reset({
+                  index: 0,
+                  routes: [{ name: 'Auth' }]
+                })
+              );
+            } catch (error: any) {
+              console.error('Error deleting account:', error);
+              
+              // Handle reauthentication errors
+              if (error.code === 'auth/requires-recent-login') {
+                Alert.alert(
+                  'Authentication Required', 
+                  'Please sign out and sign in again before deleting your account.',
+                  [{ text: 'OK' }]
+                );
+              } else {
+                Alert.alert('Error', 'Failed to delete account. Please try again.');
+              }
+            } finally {
+              setIsDeletingAccount(false);
+            }
+          },
+        },
+      ],
+      { cancelable: true }
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <StatusBar barStyle="dark-content" />
@@ -336,9 +399,21 @@ function ProfileScreen() {
         </View>
 
         <TouchableOpacity 
+          style={styles.deleteAccountButton}
+          onPress={handleDeleteAccount}
+          disabled={isDeletingAccount || isLoading}
+        >
+          {isDeletingAccount ? (
+            <ActivityIndicator color={colors.white} />
+          ) : (
+            <Text style={styles.deleteAccountButtonText}>Delete Account</Text>
+          )}
+        </TouchableOpacity>
+
+        <TouchableOpacity 
           style={styles.signOutButton}
           onPress={handleSignOut}
-          disabled={isLoading}
+          disabled={isLoading || isDeletingAccount}
         >
           {isLoading ? (
             <ActivityIndicator color={colors.white} />
@@ -556,8 +631,21 @@ const styles = StyleSheet.create({
   disabledText: {
     color: colors.gray[400],
   },
-  signOutButton: {
+  deleteAccountButton: {
     backgroundColor: colors.error,
+    borderRadius: theme.borderRadius.m,
+    padding: theme.spacing.m,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: theme.spacing.m,
+  },
+  deleteAccountButtonText: {
+    color: colors.white,
+    fontSize: theme.typography.fontSize.m,
+    fontWeight: '600',
+  },
+  signOutButton: {
+    backgroundColor: colors.primary,
     borderRadius: theme.borderRadius.m,
     padding: theme.spacing.m,
     alignItems: 'center',

@@ -320,6 +320,7 @@ const styles = StyleSheet.create({
     borderRadius: theme.borderRadius.m,
     padding: theme.spacing.m,
     fontSize: theme.typography.fontSize.m,
+    color: colors.text,
   },
   phoneInputContainer: {
     width: '100%',

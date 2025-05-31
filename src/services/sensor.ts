@@ -22,9 +22,9 @@ import { config } from '../constants/config';
 const API_URL = config.apiUrl;
 
 /**
- * Formats a date in YYMMDD-HHMMSS format
+ * Formats a date as an ISO string
  * @param date - Date or timestamp to format (defaults to current time)
- * @returns Formatted timestamp string
+ * @returns ISO string timestamp
  */
 const formatTimestamp = (date: Date | number | string = new Date()): string => {
   let dateObj: Date;
@@ -39,14 +39,7 @@ const formatTimestamp = (date: Date | number | string = new Date()): string => {
     dateObj = new Date();
   }
   
-  const year = dateObj.getFullYear().toString().slice(-2);
-  const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
-  const day = dateObj.getDate().toString().padStart(2, '0');
-  const hours = dateObj.getHours().toString().padStart(2, '0');
-  const minutes = dateObj.getMinutes().toString().padStart(2, '0');
-  const seconds = dateObj.getSeconds().toString().padStart(2, '0');
-  
-  return `${year}${month}${day}-${hours}${minutes}${seconds}`;
+  return dateObj.toISOString();
 };
 
 // Register a new sensor device
@@ -64,8 +57,8 @@ export const registerSensorDevice = async (userId: string, deviceName: string, d
       phoneNumber: phoneNumber,
       isConnected: false,
       batteryLevel: 100,
-      lastSyncTime: now,
-      createdAt: now,
+      lastSyncTime: formatTimestamp(now),
+      createdAt: formatTimestamp(now),
     };
     
     // Use setDoc with the provided deviceId as the document ID
@@ -313,7 +306,7 @@ export const updateDeviceId = async (userId: string, oldDeviceId: string, newDev
     await setDoc(newDeviceRef, {
       ...deviceData,
       // Update any fields that should reflect the ID change
-      lastSyncTime: new Date(),
+      lastSyncTime: formatTimestamp(),
     });
     
     // Delete the old device document

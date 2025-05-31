@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { 
   View, 
   Text, 
@@ -10,7 +10,7 @@ import {
   Linking
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
 import { colors } from '../../constants/colors';
@@ -128,36 +128,49 @@ function HomeScreen() {
     };
   }, [sound]);
 
-  useEffect(() => {
-    const fetchDevicesAndEvents = async () => {
-      if (!user) return;
+  // Extract fetchDevicesAndEvents as a useCallback to be reused
+  const fetchDevicesAndEvents = useCallback(async () => {
+    if (!user) return;
+    
+    try {
+      console.log('Refreshing device data and status checks...');
+      setIsLoading(true);
+      const userDevices = await getUserDevices(user.id);
+      setDevices(userDevices);
       
-      try {
-        setIsLoading(true);
-        const userDevices = await getUserDevices(user.id);
-        setDevices(userDevices);
-        
-        // Fetch events for all devices
-        const allEvents: any[] = [];
-        for (const device of userDevices) {
-          const deviceEvents = await getDeviceEvents(device.id);
-          allEvents.push(...deviceEvents);
-        }
-        
-        // Sort events by timestamp
-        allEvents.sort((a, b) => b.timestamp - a.timestamp);
-        setEvents(allEvents);
-      } catch (err) {
-        console.error('Error fetching data:', err);
-        setError('Failed to load data');
-      } finally {
-        setIsLoading(false);
+      // Fetch events for all devices
+      const allEvents: any[] = [];
+      for (const device of userDevices) {
+        const deviceEvents = await getDeviceEvents(device.id);
+        allEvents.push(...deviceEvents);
       }
-    };
-
-    fetchDevicesAndEvents();
+      
+      // Sort events by timestamp
+      allEvents.sort((a, b) => b.timestamp - a.timestamp);
+      setEvents(allEvents);
+      console.log('Device data refresh completed');
+    } catch (err) {
+      console.error('Error fetching data:', err);
+      setError('Failed to load data');
+    } finally {
+      setIsLoading(false);
+    }
   }, [user]);
-  
+
+  // Initial load when user changes
+  useEffect(() => {
+    fetchDevicesAndEvents();
+  }, [fetchDevicesAndEvents]);
+
+  // Refresh data every time the screen comes into focus
+  // This ensures device status calculations are performed on each navigation to home screen
+  useFocusEffect(
+    useCallback(() => {
+      console.log('Home screen focused - triggering device status refresh');
+      fetchDevicesAndEvents();
+    }, [fetchDevicesAndEvents])
+  );
+
   // Filter events for the selected day
   useEffect(() => {
     if (!selectedDate || !events.length) {

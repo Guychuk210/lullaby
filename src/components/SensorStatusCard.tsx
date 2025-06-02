@@ -111,7 +111,7 @@ function SensorStatusCard({ device }: SensorStatusCardProps) {
           <Text style={styles.errorText}>Error: {error}</Text>
         ) : (
           <Text style={styles.syncTimeText}>
-            Last sync: {formatLastSyncTime(lastSyncTime)}
+            Last life signal recieved: {formatLastSyncTime(lastSyncTime)}
           </Text>
         )}
       </View>

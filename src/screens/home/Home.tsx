@@ -297,12 +297,6 @@ function HomeScreen() {
   const renderDashboardContent = () => (
     <>
       <View style={styles.actionButtonsContainer}>
-        <TouchableOpacity 
-          style={[styles.actionButton, styles.testEventButton]} 
-          onPress={createTestEvent}
-        >
-          <Text style={styles.actionButtonText}>Create Test Event</Text>
-        </TouchableOpacity>
         
         <TouchableOpacity 
           style={[styles.actionButton, styles.alarmButton]} 

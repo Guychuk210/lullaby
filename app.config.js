@@ -4,7 +4,7 @@ module.exports = {
   expo: {
     name: 'Numah.AI',
     slug: 'lullaby',
-    version: '1.0.0',
+    version: '1.0.2',
     orientation: 'portrait',
     icon: './assets/icon.png',
     userInterfaceStyle: 'light',
@@ -18,7 +18,7 @@ module.exports = {
     ios: {
       supportsTablet: true,
       bundleIdentifier: 'com.guylevy210.lullaby',
-      buildNumber: '1.0.0',
+      buildNumber: '1.0.2',
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false
       }
@@ -28,7 +28,8 @@ module.exports = {
         foregroundImage: './assets/adaptive-icon.png',
         backgroundColor: '#ffffff',
       },
-      package: 'com.guylevy210.lullaby'
+      package: 'com.guylevy210.lullaby',
+      versionCode: 2
     },
     web: {
       favicon: './assets/favicon.png',

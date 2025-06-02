@@ -14,7 +14,7 @@ import {
   Pressable
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, CommonActions } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../../navigation/types';
 import { registerUser } from '../../services/auth';
@@ -66,20 +66,23 @@ function RegisterScreen() {
     }
 
     setIsLoading(true);
+    console.log('Starting registration process...');
     try {
-      // Register user with Firebase
-      await registerUser(email, password, name, formattedPhoneNumber);
+      // Register user with Firebase - this will automatically sign them in
+      // Navigation will be handled automatically by the RootNavigator when auth state changes
+      console.log('Calling registerUser function...');
+      const userData = await registerUser(email, password, name, formattedPhoneNumber);
+      console.log('Registration successful, user data:', userData);
+      console.log('User should now be authenticated and navigation should occur automatically');
       
-      // Direct navigation to Main stack
-      navigation.dispatch(
-        CommonActions.reset({
-          index: 0,
-          routes: [{ name: 'Main' }],
-        })
-      );
+      // Remove explicit navigation - let auth state listener handle it automatically
+      // The user is now signed in and the RootNavigator will detect this change
+      
     } catch (error) {
-      Alert.alert('Registration Failed', 'Could not create account. Please try again.');
-      console.error('Registration error:', error);
+      // Extract the specific error message from the error object
+      const errorMessage = error instanceof Error ? error.message : 'Could not create account. Please try again.';
+      console.error('Registration failed:', error);
+      Alert.alert('Registration Failed', errorMessage);
     } finally {
       setIsLoading(false);
     }

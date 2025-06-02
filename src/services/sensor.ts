@@ -57,20 +57,19 @@ export const registerSensorDevice = async (userId: string, deviceName: string, d
       phoneNumber: phoneNumber,
       isConnected: false,
       batteryLevel: 100,
-      lastSyncTime: formatTimestamp(now),
       createdAt: formatTimestamp(now),
     };
     
-    // Use setDoc with the provided deviceId as the document ID
+    // First, claim the device in AWS IoT before creating in Firestore
+    console.log('claiming device from AWS IoT');
+    await claimDevice(userId, deviceId, deviceName);
+    console.log('device claimed successfully');
+    
+    // Only create device in Firestore if AWS IoT claim was successful
     const deviceRef = doc(db, 'users', userId, 'devices', deviceId);
     await setDoc(deviceRef, deviceData);
     
-    console.log('device registered');
-    
-    // After storing in Firebase, claim the device in AWS IoT
-    console.log('claiming device from AWS IoT');
-    await claimDevice(userId, deviceId, deviceName);
-    console.log('device claimed');
+    console.log('device registered in Firestore');
     
     // Return device data with proper type conversion
     return {
@@ -109,7 +108,9 @@ export const claimDevice = async (userId: string, deviceId: string, deviceName: 
     if (!response.ok) {
       const errorData = await response.json();
       console.error('Error claiming device:', errorData);
-      throw new Error(errorData.error || 'Failed to claim device');
+      // Check for both 'message' and 'error' fields to handle different server response formats
+      const errorMessage = errorData.message || errorData.error || 'Failed to claim device';
+      throw new Error(errorMessage);
     }
     
     const result = await response.json();

@@ -17,14 +17,20 @@ export const registerUser = async (
   displayName: string,
   phoneNumber?: string
 ): Promise<User> => {
+  console.log('registerUser: Starting registration process for email:', email);
   try {
+    console.log('registerUser: Creating user with Firebase Auth...');
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
+    console.log('registerUser: Firebase Auth successful, user ID:', user.uid);
     
     // Update profile with display name
+    console.log('registerUser: Updating profile with display name...');
     await updateProfile(user, { displayName });
+    console.log('registerUser: Profile updated successfully');
     
     // Create user document in Firestore
+    console.log('registerUser: Preparing to create Firestore document...');
     const userDoc = {
       id: user.uid,
       email: user.email,
@@ -34,15 +40,30 @@ export const registerUser = async (
       createdAt: serverTimestamp(),
     };
     
+    console.log('registerUser: User document to create:', { ...userDoc, createdAt: 'serverTimestamp()' });
+    console.log('registerUser: Creating document at path: users/' + user.uid);
+    
     await setDoc(doc(db, 'users', user.uid), userDoc);
+    console.log('registerUser: Firestore document created successfully!');
+    
+    // Verify the document was created
+    console.log('registerUser: Verifying document creation...');
+    const verifyDoc = await getDoc(doc(db, 'users', user.uid));
+    console.log('registerUser: Document verification - exists:', verifyDoc.exists());
+    if (verifyDoc.exists()) {
+      console.log('registerUser: Verified document data:', verifyDoc.data());
+    }
     
     // Return user data with timestamp converted to number for local use
-    return {
+    const returnData = {
       ...userDoc,
       createdAt: Date.now(), // Use current timestamp for local object
     } as User;
+    
+    console.log('registerUser: Returning user data:', returnData);
+    return returnData;
   } catch (error) {
-    console.error('Error registering user:', error);
+    console.error('registerUser: Error during registration:', error);
     throw error;
   }
 };

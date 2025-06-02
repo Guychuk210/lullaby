@@ -61,7 +61,9 @@ function SensorSetup() {
         ]
       );
     } catch (error) {
-      Alert.alert('Error', 'Failed to register device. Please try again.');
+      // Extract the specific error message from the error object
+      const errorMessage = error instanceof Error ? error.message : 'Failed to register device. Please try again.';
+      Alert.alert('Error', errorMessage);
       console.error('Device registration error:', error);
     } finally {
       setIsLoading(false);

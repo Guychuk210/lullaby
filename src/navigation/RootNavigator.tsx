@@ -18,8 +18,14 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 function RootNavigator() {
   const { user, isLoading } = useAuth();
   
+  console.log('RootNavigator rendering with:', { 
+    user: user ? `${user.email} (${user.id})` : null, 
+    isLoading 
+  });
+  
   // Show loading indicator while checking authentication status
   if (isLoading) {
+    console.log('RootNavigator: Showing loading screen');
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" />
@@ -27,24 +33,32 @@ function RootNavigator() {
     );
   }
 
+  console.log('RootNavigator: Rendering navigation with user authenticated:', !!user);
+
   return (
     <Stack.Navigator
       screenOptions={{
         headerShown: false,
       }}
-      initialRouteName={user ? "Main" : "Auth"}
     >
-      <Stack.Screen 
-        name="Auth" 
-        component={AuthNavigator} 
-      />
-      <Stack.Screen 
-        name="Main" 
-        component={MainNavigator}
-      />
-      <Stack.Screen name="SensorSetup" component={SensorSetupScreen} />
-      <Stack.Screen name="Notifications" component={NotificationsScreen} />
-      <Stack.Screen name="Settings" component={SettingsScreen} />
+      {user ? (
+        // User is authenticated - show main app screens
+        <>
+          <Stack.Screen 
+            name="Main" 
+            component={MainNavigator}
+          />
+          <Stack.Screen name="SensorSetup" component={SensorSetupScreen} />
+          <Stack.Screen name="Notifications" component={NotificationsScreen} />
+          <Stack.Screen name="Settings" component={SettingsScreen} />
+        </>
+      ) : (
+        // User is not authenticated - show auth screens
+        <Stack.Screen 
+          name="Auth" 
+          component={AuthNavigator} 
+        />
+      )}
     </Stack.Navigator>
   );
 }
